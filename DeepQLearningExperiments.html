@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Эксперименты с deep Q-learning</title>
+    <link rel="stylesheet" type="text/css" href="css/environment.css">
+</head>
+<body>
+    <div class="environment">
+        <div class="env-view">
+            <canvas id="env-canvas"></canvas>
+        </div>
+    </div>
+
+    <script src="js/random.js"></script>
+    <script src="js/spaces/DiscreteSpace.js"></script>
+    <script src="js/spaces/BoxSpace.js"></script>
+    <script src="js/envs/CartPole.js"></script>
+    <script>
+        let environmentCanvas = document.getElementById("env-canvas")
+        environmentCanvas.width = 600
+        environmentCanvas.height = 400
+        let environment = new CartPole(environmentCanvas)
+        environment.Reset()
+
+        let action = 0
+        let prevTime = 0
+
+        function Draw() {
+            let currTime = performance.now()
+            if (currTime - prevTime > 50) {
+                prevTime = currTime
+
+                let {state, reward, done} = environment.Step(action)
+                environment.Draw()
+                
+                if (done)
+                    return
+            }
+
+            window.requestAnimationFrame(Draw)
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key == 'ArrowLeft') {
+                action = 0
+            }
+            else if (e.key == 'ArrowRight') {
+                action = 1
+            }
+        })
+
+        Draw()
+    </script>
+</body>
+</html>
