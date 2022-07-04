@@ -1,6 +1,7 @@
-function CartPole(canvas) {
+function CartPole(canvas, infoBox) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
+    this.infoBox = infoBox
 
     this.gravity = 9.8
     this.cartMass = 1.0
@@ -21,10 +22,23 @@ function CartPole(canvas) {
     this.observationSpace = new BoxSpace(low, high)
 
     this.state = null
+    this.maxSteps = 0
 }
 
 CartPole.prototype.StateToVector = function() {
     return [this.state.x, this.state.xDot, this.state.theta, this.state.thetaDot]
+}
+
+CartPole.prototype.Reset = function() {
+    this.state = {
+        x: RandomUniform(-0.05, 0.05),
+        xDot: RandomUniform(-0.05, 0.05),
+        theta: RandomUniform(-0.05, 0.05),
+        thetaDot: RandomUniform(-0.05, 0.05),
+    }
+    this.steps = 0
+
+    return this.StateToVector()
 }
 
 CartPole.prototype.Step = function(action) {
@@ -46,6 +60,8 @@ CartPole.prototype.Step = function(action) {
     this.state.xDot += this.tau * xAcc
     this.state.theta += this.tau * this.state.thetaDot
     this.state.thetaDot += this.tau * thetaAcc
+    this.steps++
+    this.maxSteps = Math.max(this.steps, this.maxSteps)
 
     let done = Math.abs(this.state.x) > this.xThreshold || Math.abs(this.state.theta) > this.thetaThreshold
     let reward = 1 - (Math.abs(this.state.x) / this.xThreshold + Math.abs(this.state.theta) / this.thetaThreshold) / 2
@@ -55,17 +71,6 @@ CartPole.prototype.Step = function(action) {
         reward: reward,
         done: done
     }
-}
-
-CartPole.prototype.Reset = function() {
-    this.state = {
-        x: RandomUniform(-0.05, 0.05),
-        xDot: RandomUniform(-0.05, 0.05),
-        theta: RandomUniform(-0.05, 0.05),
-        thetaDot: RandomUniform(-0.05, 0.05),
-    }
-
-    return this.StateToVector()
 }
 
 CartPole.prototype.Draw = function() {
@@ -115,4 +120,7 @@ CartPole.prototype.Draw = function() {
     this.ctx.fillStyle = '#888'
     this.ctx.fillText(`x: ${this.state.x.toFixed(3)}`, 5, height - 25)
     this.ctx.fillText(`theta: ${this.state.theta.toFixed(3)}`, 5, height - 5)
+
+    this.infoBox.innerText = `Текущее число шагов: ${this.steps}\n`
+    this.infoBox.innerText += `Максимальное число шагов: ${this.maxSteps}\n`
 }

@@ -1,3 +1,5 @@
+const SNAKE_INITIAL_LENGTH = 3
+
 const SNAKE_TURN_LEFT = 1
 const SNAKE_TURN_RIGHT = 2
 
@@ -6,9 +8,10 @@ const SNAKE_WALL = 'wall'
 const SNAKE_EAT_FOOD = 'eat food'
 const SNAKE_DEFAULT = 'default'
 
-function Snake(canvas, fieldWidth = 29, fieldHeight = 19) {
+function Snake(canvas, infoBox, fieldWidth = 29, fieldHeight = 19) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
+    this.infoBox = infoBox
     this.fieldWidth = fieldWidth
     this.fieldHeight = fieldHeight
 
@@ -18,7 +21,8 @@ function Snake(canvas, fieldWidth = 29, fieldHeight = 19) {
 
     this.actionSpace = new DiscreteSpace(3)
     this.observationSpace = new UniformSpace(-1, 1, 25)
-    this.maxLength = 0
+
+    this.maxLength = SNAKE_INITIAL_LENGTH
 }
 
 Snake.prototype.InitSnake = function() {
@@ -27,9 +31,8 @@ Snake.prototype.InitSnake = function() {
     let x0 = Math.floor(this.fieldWidth / 2)
     let y0 = Math.floor(this.fieldHeight / 2)
 
-    snake.push({x: x0, y: y0})
-    snake.push({x: x0, y: y0 + 1})
-    snake.push({x: x0, y: y0 + 2})
+    for (let i = 0; i < SNAKE_INITIAL_LENGTH; i++)
+        snake.push({x: x0, y: y0 + i})
 
     return snake
 }
@@ -69,6 +72,7 @@ Snake.prototype.MoveSnake = function(dx, dy) {
 
     if (head.x + dx == this.food.x && head.y + dy == this.food.y) {
         this.snake.unshift({x: this.food.x, y: this.food.y})
+        this.maxLength = Math.max(this.snake.length, this.maxLength)
         this.food = this.InitFood()
         return SNAKE_EAT_FOOD
     }
@@ -181,6 +185,7 @@ Snake.prototype.StateToVector = function() {
 }
 
 Snake.prototype.Reset = function() {
+    this.steps = 0
     this.snake = this.InitSnake()
     this.food = this.InitFood()
     this.direction = {
@@ -210,6 +215,8 @@ Snake.prototype.Step = function(action) {
         this.direction.dy = dx
     }
 
+    this.steps++
+
     let prevDst = this.DistanceToFood()
     let move = this.MoveSnake(this.direction.dx, this.direction.dy)
     let currDst = this.DistanceToFood()
@@ -218,10 +225,7 @@ Snake.prototype.Step = function(action) {
 
     if (done) {
         reward = move == SNAKE_WALL ? -100 : -120
-        this.maxLength = Math.max(this.snake.length, this.maxLength)
         console.log(move)
-        console.log("snake length:", this.snake.length)
-        console.log("max snake length:", this.maxLength)
     }
     else if (move == SNAKE_EAT_FOOD) {
         reward = 30
@@ -270,4 +274,7 @@ Snake.prototype.Draw = function() {
     this.ctx.rect(this.food.x * cellWidth, this.food.y * cellHeight, cellWidth, cellHeight)
     this.ctx.fill()
     this.ctx.stroke()
+
+    this.infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
+    this.infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}`
 }
