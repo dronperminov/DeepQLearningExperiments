@@ -1,6 +1,7 @@
-function DeepQNetwork(environment, environmentInfoBox) {
+function DeepQNetwork(environment, rewardCanvas) {
     this.environment = environment
-    this.environmentInfoBox = environmentInfoBox
+    this.rewardCanvas = rewardCanvas
+    this.rewardCtx = this.rewardCanvas.getContext('2d')
 
     this.batchSize = 128
     this.optimizer = new Optimizer(0.1, 0, 'sgd')
@@ -48,6 +49,55 @@ DeepQNetwork.prototype.Average = function(values) {
     return average / values.length
 }
 
+DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
+    let width = this.rewardCanvas.width
+    let height = this.rewardCanvas.height
+    let padding = 15
+
+    let count = Math.max(rewards.length, minRewards)
+    let maxReward = -Infinity
+    let minReward = Infinity
+
+    for (let reward of rewards) {
+        maxReward = Math.max(maxReward, reward)
+        minReward = Math.min(minReward, reward)
+    }
+
+    this.rewardCtx.clearRect(0, 0, width, height)
+
+    this.rewardCtx.strokeStyle = '#000'
+    this.rewardCtx.beginPath()
+    this.rewardCtx.moveTo(padding, padding)
+    this.rewardCtx.lineTo(padding, height - padding)
+    this.rewardCtx.lineTo(width - padding, height - padding)
+    this.rewardCtx.stroke()
+
+    this.rewardCtx.fillStyle = '#000'
+    this.rewardCtx.font = '10px sans-serif'
+    this.rewardCtx.textAlign = 'center'
+    this.rewardCtx.textBaseline = 'bottom'
+    this.rewardCtx.fillText(`${maxReward}`, padding, padding)
+    this.rewardCtx.textBaseline = 'top'
+    this.rewardCtx.fillText(`${minReward}`, padding, height - padding + 2)
+    this.rewardCtx.textAlign = 'right'
+    this.rewardCtx.fillText(`${rewards.length}`, padding + (rewards.length - 1) / (count - 1) * (width - 2 * padding), height - padding + 2)
+
+    this.rewardCtx.strokeStyle = '#f00'
+    this.rewardCtx.beginPath()
+
+    for (let i = 0; i < rewards.length; i++) {
+        let x = padding + i / (count - 1) * (width - 2 * padding)
+        let y = height - padding - ((rewards[i] - minReward) / (maxReward - minReward)) * (height - 2 * padding)
+
+        if (i == 0)
+            this.rewardCtx.moveTo(x, y)
+        else
+            this.rewardCtx.lineTo(x, y)
+    }
+
+    this.rewardCtx.stroke()
+}
+
 DeepQNetwork.prototype.Train = function(replayMemory) {
     let learningRate = 0.7
     let discountFactor = 0.618
@@ -80,7 +130,7 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
     this.model.TrainOnBatch(currentStates, targetQsList, this.optimizer, this.loss)
 }
 
-DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done) {
+DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards) {
     if (episode >= trainSteps)
         return
 
@@ -116,6 +166,9 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
     }
     
     if (done) {
+        rewards.push(totalTrainingRewards)
+        this.DrawRewards(rewards)
+
         console.log(`${episode}. Total training rewards: ${totalTrainingRewards} use ${this.environment.steps} steps`)
 
         if (stepsToUpdateTargetModel >= 100) {
@@ -132,11 +185,11 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
         observation = this.environment.Reset()
     }
 
-    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done))
+    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards))
 }
 
 DeepQNetwork.prototype.Run = function(trainSteps = 10000) {
     let observation = this.environment.Reset()
 
-    this.Step(trainSteps, 0, 1, [], 0, 0, observation, false)
+    this.Step(trainSteps, 0, 1, [], 0, 0, observation, false, [])
 }

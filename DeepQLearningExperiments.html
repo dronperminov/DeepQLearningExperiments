@@ -12,6 +12,10 @@
             <canvas id="env-canvas"></canvas>
         </div>
 
+        <div class="reward-view">
+            <canvas id="reward-canvas"></canvas>
+        </div>
+
         <div class="env-info" id="env-info-box">
         </div>
     </div>
@@ -34,15 +38,20 @@
     <script src="js/deep_q_network.js"></script>
     <script>
         let environmentCanvas = document.getElementById("env-canvas")
+        let rewardCanvas = document.getElementById("reward-canvas")
         let environmentInfoBox = document.getElementById("env-info-box")
+
         environmentCanvas.width = 600
         environmentCanvas.height = 400
+
+        rewardCanvas.width = 600
+        rewardCanvas.height = 400
 
         // let environment = new CartPole(environmentCanvas, environmentInfoBox)
         let environment = new Snake(environmentCanvas, environmentInfoBox)
         environment.Reset()
 
-        let dqn = new DeepQNetwork(environment, environmentInfoBox)
+        let dqn = new DeepQNetwork(environment, rewardCanvas)
         dqn.Run()
     </script>
 </body>
