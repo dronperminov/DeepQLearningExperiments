@@ -26,7 +26,10 @@
 
     <script src="js/spaces/DiscreteSpace.js"></script>
     <script src="js/spaces/BoxSpace.js"></script>
+    <script src="js/spaces/UniformSpace.js"></script>
+
     <script src="js/envs/CartPole.js"></script>
+    <script src="js/envs/Snake.js"></script>
 
     <script src="js/deep_q_network.js"></script>
     <script>
@@ -34,7 +37,8 @@
         environmentCanvas.width = 600
         environmentCanvas.height = 400
 
-        let environment = new CartPole(environmentCanvas)
+        // let environment = new CartPole(environmentCanvas)
+        let environment = new Snake(environmentCanvas)
         environment.Reset()
 
         let environmentInfoBox = document.getElementById("env-info-box")
