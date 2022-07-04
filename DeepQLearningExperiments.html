@@ -34,14 +34,14 @@
     <script src="js/deep_q_network.js"></script>
     <script>
         let environmentCanvas = document.getElementById("env-canvas")
+        let environmentInfoBox = document.getElementById("env-info-box")
         environmentCanvas.width = 600
         environmentCanvas.height = 400
 
-        // let environment = new CartPole(environmentCanvas)
-        let environment = new Snake(environmentCanvas)
+        // let environment = new CartPole(environmentCanvas, environmentInfoBox)
+        let environment = new Snake(environmentCanvas, environmentInfoBox)
         environment.Reset()
 
-        let environmentInfoBox = document.getElementById("env-info-box")
         let dqn = new DeepQNetwork(environment, environmentInfoBox)
         dqn.Run()
     </script>

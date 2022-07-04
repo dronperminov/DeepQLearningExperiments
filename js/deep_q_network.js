@@ -20,8 +20,9 @@ DeepQNetwork.prototype.InitAgent = function() {
     let outputs = this.environment.actionSpace.GetShape()
 
     let agent = new NeuralNetwork(inputs)
-    agent.AddLayer({size: 24, activation: 'relu'})
-    agent.AddLayer({size: 12, activation: 'relu'})
+    // agent.AddLayer({size: 24, activation: 'relu'})
+    // agent.AddLayer({size: 12, activation: 'relu'})
+    agent.AddLayer({size: 256, activation: 'tanh'})
     agent.AddLayer({size: outputs, activation: ''})
     agent.SetBatchSize(this.batchSize)
 
@@ -79,18 +80,13 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
     this.model.TrainOnBatch(currentStates, targetQsList, this.optimizer, this.loss)
 }
 
-DeepQNetwork.prototype.Step = function(trainSteps, episode, episodeInfo, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done) {
+DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done) {
     if (episode >= trainSteps)
         return
 
     if (!done) {
-        episodeInfo.length++
-        episodeInfo.maxLength = Math.max(episodeInfo.length, episodeInfo.maxLength)
         stepsToUpdateTargetModel++
 
-        this.environmentInfoBox.innerText = `Текущее число шагов: ${episodeInfo.length}\n`
-        this.environmentInfoBox.innerText += `Максимальное число шагов: ${episodeInfo.maxLength}\n`
-        this.environmentInfoBox.innerText += `Среднее число шагов за последние ${episodeInfo.avgLength.length} шагов: ${Math.round(this.Average(episodeInfo.avgLength))}`
         this.environment.Draw()
 
         let action
@@ -120,7 +116,7 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, episodeInfo, epsilon
     }
     
     if (done) {
-        console.log(`${episode}. Total training rewards: ${totalTrainingRewards} use ${episodeInfo.length} steps`)
+        console.log(`${episode}. Total training rewards: ${totalTrainingRewards} use ${this.environment.steps} steps`)
 
         if (stepsToUpdateTargetModel >= 100) {
             console.log("Copying main network weights to target network")
@@ -134,20 +130,13 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, episodeInfo, epsilon
         done = false
         totalTrainingRewards = 0
         observation = this.environment.Reset()
-        episodeInfo.avgLength[episode % episodeInfo.avgLength.length] = episodeInfo.length
-        episodeInfo.length = 0
     }
 
-    window.requestAnimationFrame(() => this.Step(trainSteps, episode, episodeInfo, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done))
+    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done))
 }
 
 DeepQNetwork.prototype.Run = function(trainSteps = 10000) {
     let observation = this.environment.Reset()
-    let episodeInfo = {
-        length: 0,
-        maxLength: 0,
-        avgLength: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    }
 
-    this.Step(trainSteps, 0, episodeInfo, 1, [], 0, 0, observation, false)
+    this.Step(trainSteps, 0, 1, [], 0, 0, observation, false)
 }
