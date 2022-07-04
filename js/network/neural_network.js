@@ -86,7 +86,10 @@ NeuralNetwork.prototype.CalculateLoss = function(y, t, deltas, L) {
 }
 
 NeuralNetwork.prototype.TrainOnBatch = function(x, y, optimizer, L) {
-    let output = this.Forward(x)
+    return this.TrainOnBatchWithOutput(x, y, this.Forward(x), optimizer, L)
+}
+
+NeuralNetwork.prototype.TrainOnBatchWithOutput = function(x, y, output, optimizer, L) {
     let deltas = []
     let loss = this.CalculateLoss(output, y, deltas, L)
 

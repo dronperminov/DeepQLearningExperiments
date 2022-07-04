@@ -4,7 +4,7 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.rewardCtx = this.rewardCanvas.getContext('2d')
 
     this.batchSize = config.batchSize
-    this.minReplaySize = config.minReplaySize || this.batchSize
+    this.minReplaySize = Math.max(config.minReplaySize, this.batchSize)
     this.optimizer = new Optimizer(0.1, 0, 'sgd')
     this.loss = new Huber(1)
 
@@ -12,14 +12,14 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.targetModel = this.InitAgent()
     this.targetModel.SetWeights(this.model)
 
-    this.maxEpsilon = config.maxEpsilon || 1
-    this.minEpsilon = config.minEpsilon || 0.01
-    this.decay = config.decay || 0.01
-    this.alpha = config.alpha || 0.7
-    this.discountFactor = config.discountFactor || 0.618
+    this.maxEpsilon = config.maxEpsilon
+    this.minEpsilon = config.minEpsilon
+    this.decay = config.decay
+    this.alpha = config.alpha
+    this.discountFactor = config.discountFactor
 
-    this.trainModelPeriod = config.trainModelPeriod || 4
-    this.updateTargetModelPeriod = config.updateTargetModelPeriod || 100
+    this.trainModelPeriod = config.trainModelPeriod
+    this.updateTargetModelPeriod = config.updateTargetModelPeriod
 }
 
 DeepQNetwork.prototype.InitAgent = function() {
@@ -29,7 +29,7 @@ DeepQNetwork.prototype.InitAgent = function() {
     let agent = new NeuralNetwork(inputs)
     // agent.AddLayer({size: 24, activation: 'relu'})
     // agent.AddLayer({size: 12, activation: 'relu'})
-    agent.AddLayer({size: 256, activation: 'tanh'})
+    agent.AddLayer({size: 256, activation: 'relu'})
     agent.AddLayer({size: outputs, activation: ''})
     agent.SetBatchSize(this.batchSize)
 
@@ -82,9 +82,9 @@ DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
     this.rewardCtx.font = '10px sans-serif'
     this.rewardCtx.textAlign = 'center'
     this.rewardCtx.textBaseline = 'bottom'
-    this.rewardCtx.fillText(`${maxReward}`, padding, padding)
+    this.rewardCtx.fillText(`${maxReward.toFixed(2)}`, padding, padding)
     this.rewardCtx.textBaseline = 'top'
-    this.rewardCtx.fillText(`${minReward}`, padding, height - padding + 2)
+    this.rewardCtx.fillText(`${minReward.toFixed(2)}`, padding, height - padding + 2)
     this.rewardCtx.textAlign = 'right'
     this.rewardCtx.fillText(`${rewards.length}`, padding + (rewards.length - 1) / (count - 1) * (width - 2 * padding), height - padding + 2)
 
@@ -130,7 +130,7 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
         targetQsList.push(targetQ)
     }
 
-    this.model.TrainOnBatch(currentStates, targetQsList, this.optimizer, this.loss)
+    this.model.TrainOnBatchWithOutput(currentStates, targetQsList, currentQsList, this.optimizer, this.loss)
 }
 
 DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards) {
