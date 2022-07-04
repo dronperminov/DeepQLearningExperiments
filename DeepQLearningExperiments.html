@@ -49,9 +49,22 @@
 
         // let environment = new CartPole(environmentCanvas, environmentInfoBox)
         let environment = new Snake(environmentCanvas, environmentInfoBox)
-        environment.Reset()
 
-        let dqn = new DeepQNetwork(environment, rewardCanvas)
+        let config = {
+            batchSize: 128,
+            minReplaySize: 1000,
+
+            maxEpsilon: 1,
+            minEpsilon: 0.01,
+            decay: 0.01,
+            alpha: 0.7,
+            discountFactor: 0.618,
+
+            trainModelPeriod: 1,
+            updateTargetModelPeriod: 500
+        }
+
+        let dqn = new DeepQNetwork(environment, rewardCanvas, config)
         dqn.Run()
     </script>
 </body>

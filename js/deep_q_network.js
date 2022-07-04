@@ -1,9 +1,10 @@
-function DeepQNetwork(environment, rewardCanvas) {
+function DeepQNetwork(environment, rewardCanvas, config) {
     this.environment = environment
     this.rewardCanvas = rewardCanvas
     this.rewardCtx = this.rewardCanvas.getContext('2d')
 
-    this.batchSize = 128
+    this.batchSize = config.batchSize
+    this.minReplaySize = config.minReplaySize || this.batchSize
     this.optimizer = new Optimizer(0.1, 0, 'sgd')
     this.loss = new Huber(1)
 
@@ -11,9 +12,14 @@ function DeepQNetwork(environment, rewardCanvas) {
     this.targetModel = this.InitAgent()
     this.targetModel.SetWeights(this.model)
 
-    this.maxEpsilon = 1
-    this.minEpsilon = 0.01
-    this.decay = 0.01
+    this.maxEpsilon = config.maxEpsilon || 1
+    this.minEpsilon = config.minEpsilon || 0.01
+    this.decay = config.decay || 0.01
+    this.alpha = config.alpha || 0.7
+    this.discountFactor = config.discountFactor || 0.618
+
+    this.trainModelPeriod = config.trainModelPeriod || 4
+    this.updateTargetModelPeriod = config.updateTargetModelPeriod || 100
 }
 
 DeepQNetwork.prototype.InitAgent = function() {
@@ -99,17 +105,14 @@ DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
 }
 
 DeepQNetwork.prototype.Train = function(replayMemory) {
-    let learningRate = 0.7
-    let discountFactor = 0.618
-
-    if (replayMemory.length < this.batchSize)
+    if (replayMemory.length < this.minReplaySize)
         return
 
     let miniBatch = RandomSample(replayMemory, this.batchSize)
 
     let currentStates = miniBatch.map((v) => v.observation)
     let currentQsList = this.model.Forward(currentStates)
-    
+
     let newCurrentStates = miniBatch.map((v) => v.newObservation)
     let newQsList = this.targetModel.Forward(newCurrentStates)
 
@@ -120,10 +123,10 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
         let maxFutureQ = info.reward
 
         if (!info.done)
-            maxFutureQ += discountFactor * this.GetMaxValue(newQsList[index])
+            maxFutureQ += this.discountFactor * this.GetMaxValue(newQsList[index])
 
         let targetQ = currentQsList[index].slice()
-        targetQ[info.action] = (1 - learningRate) * targetQ[info.action] + learningRate * maxFutureQ
+        targetQ[info.action] = (1 - this.alpha) * targetQ[info.action] + this.alpha * maxFutureQ
         targetQsList.push(targetQ)
     }
 
@@ -149,6 +152,7 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
         }
 
         let step = this.environment.Step(action)
+
         replayMemory.push({
             observation: observation,
             action: action,
@@ -157,21 +161,21 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
             done: step.done
         })
 
-        if (stepsToUpdateTargetModel % 4 == 0 || done)
+        if (stepsToUpdateTargetModel % this.trainModelPeriod == 0 || done)
             this.Train(replayMemory)
 
         observation = step.state
         totalTrainingRewards += step.reward
         done = step.done
     }
-    
+
     if (done) {
         rewards.push(totalTrainingRewards)
         this.DrawRewards(rewards)
 
         console.log(`${episode}. Total training rewards: ${totalTrainingRewards} use ${this.environment.steps} steps`)
 
-        if (stepsToUpdateTargetModel >= 100) {
+        if (stepsToUpdateTargetModel >= this.updateTargetModelPeriod) {
             console.log("Copying main network weights to target network")
             this.targetModel.SetWeights(this.model)
             stepsToUpdateTargetModel = 0
