@@ -61,7 +61,11 @@
             discountFactor: 0.618,
 
             trainModelPeriod: 4,
-            updateTargetModelPeriod: 100
+            updateTargetModelPeriod: 100,
+
+            agentArchitecture: [
+                {size: 256, activation: 'relu'}
+            ]
         }
 
         let dqn = new DeepQNetwork(environment, rewardCanvas, config)

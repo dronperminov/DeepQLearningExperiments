@@ -8,8 +8,8 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.optimizer = new Optimizer(0.1, 0, 'sgd')
     this.loss = new Huber(1)
 
-    this.model = this.InitAgent()
-    this.targetModel = this.InitAgent()
+    this.model = this.InitAgent(config.agentArchitecture)
+    this.targetModel = this.InitAgent(config.agentArchitecture)
     this.targetModel.SetWeights(this.model)
 
     this.maxEpsilon = config.maxEpsilon
@@ -22,14 +22,14 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.updateTargetModelPeriod = config.updateTargetModelPeriod
 }
 
-DeepQNetwork.prototype.InitAgent = function() {
+DeepQNetwork.prototype.InitAgent = function(architecture) {
     let inputs = this.environment.observationSpace.GetShape()
     let outputs = this.environment.actionSpace.GetShape()
-
     let agent = new NeuralNetwork(inputs)
-    // agent.AddLayer({size: 24, activation: 'relu'})
-    // agent.AddLayer({size: 12, activation: 'relu'})
-    agent.AddLayer({size: 256, activation: 'relu'})
+
+    for (let layer of architecture)
+        agent.AddLayer(layer)
+
     agent.AddLayer({size: outputs, activation: ''})
     agent.SetBatchSize(this.batchSize)
 
@@ -192,7 +192,7 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
     window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards))
 }
 
-DeepQNetwork.prototype.Run = function(trainSteps = 10000) {
+DeepQNetwork.prototype.Run = function(trainSteps = Infinity) {
     let observation = this.environment.Reset()
 
     this.Step(trainSteps, 0, 1, [], 0, 0, observation, false, [])
