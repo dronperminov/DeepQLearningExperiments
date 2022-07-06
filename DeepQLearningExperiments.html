@@ -21,6 +21,7 @@
     </div>
 
     <script src="js/random.js"></script>
+    <script src="js/replay_buffer.js"></script>
 
     <script src="js/network/layers/fully_connected_layer.js"></script>
     <script src="js/network/layers/softmax_layer.js"></script>
@@ -54,6 +55,7 @@
         let config = {
             batchSize: 128,
             minReplaySize: 1000,
+            maxReplaySize: 10000,
 
             learningRate: 0.1,
             optimizer: 'sgd',

@@ -5,6 +5,7 @@ function DeepQNetwork(environment, rewardCanvas, config) {
 
     this.batchSize = config.batchSize
     this.minReplaySize = Math.max(config.minReplaySize, this.batchSize)
+    this.replayBuffer = new ReplayBuffer(config.maxReplaySize)
     this.optimizer = new Optimizer(config.learningRate, 0, config.optimizer)
     this.loss = new Huber(1)
 
@@ -95,11 +96,11 @@ DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
     this.rewardCtx.stroke()
 }
 
-DeepQNetwork.prototype.Train = function(replayMemory) {
-    if (replayMemory.length < this.minReplaySize)
+DeepQNetwork.prototype.Train = function() {
+    if (this.replayBuffer.Length() < this.minReplaySize)
         return
 
-    let miniBatch = RandomSample(replayMemory, this.batchSize)
+    let miniBatch = this.replayBuffer.Sample(this.batchSize)
 
     let currStates = miniBatch.map((v) => v.state)
     let nextStates = miniBatch.map((v) => v.nextState)
@@ -124,7 +125,7 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
     this.model.TrainOnBatchWithOutput(currStates, targetQs, currQs, this.optimizer, this.loss)
 }
 
-DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards) {
+DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards) {
     if (episode >= trainSteps)
         return
 
@@ -144,16 +145,10 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
 
         let step = this.environment.Step(action)
 
-        replayMemory.push({
-            state: state,
-            action: action,
-            reward: step.reward,
-            nextState: step.state,
-            done: step.done
-        })
+        this.replayBuffer.Add(state, action, step.reward, step.state, step.done)
 
         if (stepsToUpdateTargetModel % this.trainModelPeriod == 0 || done)
-            this.Train(replayMemory)
+            this.Train()
 
         state = step.state
         totalTrainingRewards += step.reward
@@ -180,11 +175,11 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
         state = this.environment.Reset()
     }
 
-    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards))
+    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards))
 }
 
 DeepQNetwork.prototype.Run = function(trainSteps = Infinity) {
     let state = this.environment.Reset()
 
-    this.Step(trainSteps, 0, 1, [], 0, 0, state, false, [])
+    this.Step(trainSteps, 0, 1, 0, 0, state, false, [])
 }
