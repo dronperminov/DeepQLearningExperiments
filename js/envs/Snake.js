@@ -8,7 +8,7 @@ const SNAKE_WALL = 'wall'
 const SNAKE_EAT_FOOD = 'eat food'
 const SNAKE_DEFAULT = 'default'
 
-function Snake(canvas, infoBox, fieldWidth = 29, fieldHeight = 19) {
+function Snake(canvas, infoBox, fieldWidth = 14, fieldHeight = 9) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
     this.infoBox = infoBox
@@ -20,9 +20,11 @@ function Snake(canvas, infoBox, fieldWidth = 29, fieldHeight = 19) {
     this.direction = null
 
     this.actionSpace = new DiscreteSpace(3)
-    this.observationSpace = new UniformSpace(-1, 1, 25)
+    this.observationSpace = new UniformSpace(-1, 1, 43)
 
     this.maxLength = SNAKE_INITIAL_LENGTH
+    this.wallEnd = 0
+    this.eatSelfEnd = 0
 }
 
 Snake.prototype.InitSnake = function() {
@@ -105,19 +107,18 @@ Snake.prototype.DistanceToFood = function() {
     return Math.abs(dx) + Math.abs(dy)
 }
 
-Snake.prototype.DistanceToBody = function(dx, dy) {
-    let x = this.snake[0].x + dx
-    let y = this.snake[0].y + dy
+Snake.prototype.DistanceToCollision = function(x0, y0, dx, dy, fromHead = false) {
+    let x = x0 + (fromHead ? dx : 0)
+    let y = y0 + (fromHead ? dy : 0)
+    let i = 1
 
-    for (let i = 0; 0 <= x && x <= this.fieldWidth && 0 <= y && y <= this.fieldHeight; i++) {
-        if (this.IsInsideSnake(x, y))
-            return { dx: dx * (i + 1) / this.fieldWidth, dy: dy * (i + 1) / this.fieldHeight}
-
+    while (0 <= x && x <= this.fieldWidth && 0 <= y && y <= this.fieldHeight && !this.IsInsideSnake(x, y, 1)) {
         x += dx
         y += dy
+        i++
     }
 
-    return { dx: dx, dy: dy }
+    return [dx * i / this.fieldWidth, dy * i / this.fieldHeight]
 }
 
 Snake.prototype.StateToVector = function() {
@@ -132,9 +133,23 @@ Snake.prototype.StateToVector = function() {
     let dirU = this.direction.dy == -1
     let dirD = this.direction.dy == 1
 
-    let body = this.DistanceToBody(this.direction.dx, this.direction.dy)
-    let bodyLeft = this.DistanceToBody(this.direction.dy, -this.direction.dx)
-    let bodyRight = this.DistanceToBody(-this.direction.dy, this.direction.dx)
+    let distances = [
+        ...this.DistanceToCollision(head.x, head.y, this.direction.dx, this.direction.dy, true),
+        ...this.DistanceToCollision(head.x - this.direction.dy, head.y + this.direction.dx, this.direction.dx, this.direction.dy),
+        ...this.DistanceToCollision(head.x + this.direction.dy, head.y - this.direction.dx, this.direction.dx, this.direction.dy),
+
+        ...this.DistanceToCollision(head.x, head.y, -this.direction.dx, -this.direction.dy, true),
+        ...this.DistanceToCollision(head.x - this.direction.dy, head.y + this.direction.dx, -this.direction.dx, -this.direction.dy),
+        ...this.DistanceToCollision(head.x + this.direction.dy, head.y - this.direction.dx, -this.direction.dx, -this.direction.dy),
+
+        ...this.DistanceToCollision(head.x, head.y, this.direction.dy, -this.direction.dx, true),
+        ...this.DistanceToCollision(head.x + this.direction.dx, head.y + this.direction.dy, this.direction.dy, -this.direction.dx),
+        ...this.DistanceToCollision(head.x - this.direction.dx, head.y - this.direction.dy, this.direction.dy, -this.direction.dx),
+
+        ...this.DistanceToCollision(head.x, head.y, -this.direction.dy, this.direction.dx, true),
+        ...this.DistanceToCollision(head.x + this.direction.dx, head.y + this.direction.dy, -this.direction.dy, this.direction.dx),
+        ...this.DistanceToCollision(head.x - this.direction.dx, head.y - this.direction.dy, -this.direction.dy, this.direction.dx)
+    ]
 
     return [
         (dirU && this.IsCollision(pointU)) ||
@@ -173,24 +188,22 @@ Snake.prototype.StateToVector = function() {
         (head.x - this.food.x) / this.fieldWidth,
         (head.y - this.food.y) / this.fieldHeight,
         
-        body.dx,
-        body.dy,
-
-        bodyLeft.dx,
-        bodyLeft.dy,
-
-        bodyRight.dx,
-        bodyRight.dy,
+        ...distances
     ]
 }
 
-Snake.prototype.Reset = function() {
-    this.steps = 0
+Snake.prototype.Reset = function(resetInfo = false) {
     this.snake = this.InitSnake()
     this.food = this.InitFood()
     this.direction = {
         dx: 0,
         dy: -1
+    }
+
+    if (resetInfo) {
+        this.maxLength = SNAKE_INITIAL_LENGTH
+        this.wallEnd = 0
+        this.eatSelfEnd = 0
     }
 
     return this.StateToVector()
@@ -215,23 +228,25 @@ Snake.prototype.Step = function(action) {
         this.direction.dy = dx
     }
 
-    this.steps++
-
     let prevDst = this.DistanceToFood()
     let move = this.MoveSnake(this.direction.dx, this.direction.dy)
     let currDst = this.DistanceToFood()
     let done = move == SNAKE_WALL || move == SNAKE_EAT_SELF
-    let reward = -1
+    let reward = -1 / this.snake.length
 
     if (done) {
-        reward = move == SNAKE_WALL ? -100 : -120
-        console.log(move)
+        reward = move == SNAKE_WALL ? -100 : -200
+
+        if (move == SNAKE_WALL)
+            this.wallEnd++
+        else
+            this.eatSelfEnd++
     }
     else if (move == SNAKE_EAT_FOOD) {
         reward = 30
     }
     else if (currDst < prevDst) {
-        reward = 1
+        reward = 0.5 / this.snake.length
     }
 
     return {
@@ -275,6 +290,9 @@ Snake.prototype.Draw = function() {
     this.ctx.fill()
     this.ctx.stroke()
 
+    let total = (this.wallEnd + this.eatSelfEnd) / 100
     this.infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
-    this.infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}`
+    this.infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}\n`
+    if (total > 0)
+        this.infoBox.innerText += `Окончание: стена: ${this.wallEnd} (${(this.wallEnd / total).toFixed(2)}%), змея: ${this.eatSelfEnd} (${(this.eatSelfEnd / total).toFixed(2)}%)`
 }

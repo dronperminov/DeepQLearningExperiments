@@ -29,7 +29,7 @@ CartPole.prototype.StateToVector = function() {
     return [this.state.x, this.state.xDot, this.state.theta, this.state.thetaDot]
 }
 
-CartPole.prototype.Reset = function() {
+CartPole.prototype.Reset = function(resetInfo = false) {
     this.state = {
         x: RandomUniform(-0.05, 0.05),
         xDot: RandomUniform(-0.05, 0.05),
@@ -37,6 +37,10 @@ CartPole.prototype.Reset = function() {
         thetaDot: RandomUniform(-0.05, 0.05),
     }
     this.steps = 0
+
+    if (resetInfo) {
+        this.maxSteps = 0
+    }
 
     return this.StateToVector()
 }

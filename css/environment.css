@@ -1,3 +1,7 @@
+.controls {
+    padding: 10px 0;
+}
+
 .env-view canvas {
     border: 1px solid #ccc;
 }

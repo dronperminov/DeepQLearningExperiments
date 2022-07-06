@@ -7,16 +7,21 @@
     <link rel="stylesheet" type="text/css" href="css/environment.css">
 </head>
 <body>
+    <div class="controls">
+        <input type="submit" value="Запустить" id="run-btn">
+        <input type="submit" value="Шаг" id="step-btn">
+        <input type="submit" value="Сброс" id="reset-btn">
+    </div>
+
     <div class="environment">
         <div class="env-view">
             <canvas id="env-canvas"></canvas>
         </div>
 
+        <div class="env-info" id="env-info-box"></div>
+
         <div class="reward-view">
             <canvas id="reward-canvas"></canvas>
-        </div>
-
-        <div class="env-info" id="env-info-box">
         </div>
     </div>
 
@@ -37,8 +42,14 @@
     <script src="js/envs/CartPole.js"></script>
     <script src="js/envs/Snake.js"></script>
 
-    <script src="js/deep_q_network.js"></script>
+    <script src="js/algorithms/deep_q_network.js"></script>
+    <script src="js/reinforcement_learning_visualizer.js"></script>
+
     <script>
+        let runBtn = document.getElementById("run-btn")
+        let stepBtn = document.getElementById("step-btn")
+        let resetBtn = document.getElementById("reset-btn")
+
         let environmentCanvas = document.getElementById("env-canvas")
         let rewardCanvas = document.getElementById("reward-canvas")
         let environmentInfoBox = document.getElementById("env-info-box")
@@ -74,8 +85,8 @@
             ]
         }
 
-        let dqn = new DeepQNetwork(environment, rewardCanvas, config)
-        dqn.Run()
+        let dqn = new DeepQNetwork(environment, config)
+        let visualizer = new ReinforcementLearningVisualizer(dqn, rewardCanvas, runBtn, stepBtn, resetBtn)
     </script>
 </body>
 </html>
