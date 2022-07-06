@@ -131,7 +131,7 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, stepsToUpda
 
         this.environment.Draw()
 
-        let action = this.GetAction(epsilon)
+        let action = this.GetAction(state, epsilon)
         let step = this.environment.Step(action)
 
         this.replayBuffer.Add(state, action, step.reward, step.state, step.done)
