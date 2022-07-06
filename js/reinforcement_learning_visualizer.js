@@ -1,4 +1,4 @@
-function ReinforcementLearningVisualizer(algorithm, rewardCanvas, runBtn, stepBtn, resetBtn) {
+function ReinforcementLearningVisualizer(algorithm, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn) {
     this.algorithm = algorithm
 
     this.rewardCanvas = rewardCanvas
@@ -6,10 +6,12 @@ function ReinforcementLearningVisualizer(algorithm, rewardCanvas, runBtn, stepBt
 
     this.runBtn = runBtn
     this.stepBtn = stepBtn
+    this.stepEpisodeBtn = stepEpisodeBtn
     this.resetBtn = resetBtn
 
     this.runBtn.addEventListener('click', () => this.StartStop())
     this.stepBtn.addEventListener('click', () => { this.Stop(); this.Step() })
+    this.stepEpisodeBtn.addEventListener('click', () => { this.Stop(); this.StepEpsiode() })
     this.resetBtn.addEventListener('click', () => this.Reset())
 
     this.Reset()
@@ -99,6 +101,15 @@ ReinforcementLearningVisualizer.prototype.Step = function() {
         return
 
     this.DrawRewards(this.algorithm.rewards)
+}
+
+ReinforcementLearningVisualizer.prototype.StepEpsiode = function() {
+    if (this.algorithm.Step()) {
+        this.DrawRewards(this.algorithm.rewards)
+        return
+    }
+
+    window.requestAnimationFrame(() => this.StepEpsiode())
 }
 
 ReinforcementLearningVisualizer.prototype.StepAnimation = function() {

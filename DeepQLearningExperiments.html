@@ -10,6 +10,7 @@
     <div class="controls">
         <input type="submit" value="Запустить" id="run-btn">
         <input type="submit" value="Шаг" id="step-btn">
+        <input type="submit" value="Эпизод" id="step-episode-btn">
         <input type="submit" value="Сброс" id="reset-btn">
     </div>
 
@@ -48,6 +49,7 @@
     <script>
         let runBtn = document.getElementById("run-btn")
         let stepBtn = document.getElementById("step-btn")
+        let stepEpisodeBtn = document.getElementById("step-episode-btn")
         let resetBtn = document.getElementById("reset-btn")
 
         let environmentCanvas = document.getElementById("env-canvas")
@@ -86,7 +88,7 @@
         }
 
         let dqn = new DeepQNetwork(environment, config)
-        let visualizer = new ReinforcementLearningVisualizer(dqn, rewardCanvas, runBtn, stepBtn, resetBtn)
+        let visualizer = new ReinforcementLearningVisualizer(dqn, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn)
     </script>
 </body>
 </html>
