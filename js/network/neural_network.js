@@ -78,17 +78,6 @@ NeuralNetwork.prototype.Predict = function(x) {
     return x
 }
 
-NeuralNetwork.prototype.PredictArgmax = function(x) {
-    let output = this.Predict(x)
-    let imax = 0
-
-    for (let i = 1; i < this.outputs; i++)
-        if (output[i] > output[imax])
-            imax = i
-
-    return imax
-}
-
 NeuralNetwork.prototype.CalculateLoss = function(y, t, deltas, L) {
     let loss = 0
 

@@ -37,14 +37,11 @@ DeepQNetwork.prototype.InitAgent = function(architecture) {
     return agent
 }
 
-DeepQNetwork.prototype.GetMaxValue = function(values) {
-    let maxValue = values[0]
+DeepQNetwork.prototype.GetAction = function(state, epsilon) {
+    if (Math.random() <= epsilon)
+        return this.environment.actionSpace.Sample()
 
-    for (let value of values)
-        if (value > maxValue)
-            maxValue = value
-
-    return maxValue
+    return Argmax(this.model.Predict(state))
 }
 
 DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
@@ -115,7 +112,7 @@ DeepQNetwork.prototype.Train = function() {
         let maxFutureQ = info.reward
 
         if (!info.done)
-            maxFutureQ += this.gamma * this.GetMaxValue(nextQs[index])
+            maxFutureQ += this.gamma * Max(nextQs[index])
 
         let targetQ = currQs[index].slice()
         targetQ[info.action] = (1 - this.alpha) * targetQ[info.action] + this.alpha * maxFutureQ
@@ -134,15 +131,7 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, stepsToUpda
 
         this.environment.Draw()
 
-        let action
-
-        if (Math.random() <= epsilon) {
-            action = this.environment.actionSpace.Sample()
-        }
-        else {
-            action = this.model.PredictArgmax(state)
-        }
-
+        let action = this.GetAction(epsilon)
         let step = this.environment.Step(action)
 
         this.replayBuffer.Add(state, action, step.reward, step.state, step.done)
