@@ -16,7 +16,7 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.minEpsilon = config.minEpsilon
     this.decay = config.decay
     this.alpha = config.alpha
-    this.discountFactor = config.discountFactor
+    this.gamma = config.gamma
 
     this.trainModelPeriod = config.trainModelPeriod
     this.updateTargetModelPeriod = config.updateTargetModelPeriod
@@ -44,15 +44,6 @@ DeepQNetwork.prototype.GetMaxValue = function(values) {
             maxValue = value
 
     return maxValue
-}
-
-DeepQNetwork.prototype.Average = function(values) {
-    let average = 0
-
-    for (let value of values)
-        average += value
-
-    return average / values.length
 }
 
 DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
@@ -110,30 +101,30 @@ DeepQNetwork.prototype.Train = function(replayMemory) {
 
     let miniBatch = RandomSample(replayMemory, this.batchSize)
 
-    let currentStates = miniBatch.map((v) => v.observation)
-    let currentQsList = this.model.Forward(currentStates)
+    let currStates = miniBatch.map((v) => v.state)
+    let nextStates = miniBatch.map((v) => v.nextState)
 
-    let newCurrentStates = miniBatch.map((v) => v.newObservation)
-    let newQsList = this.targetModel.Forward(newCurrentStates)
+    let currQs = this.model.Forward(currStates)
+    let nextQs = this.targetModel.Forward(nextStates)
 
-    let targetQsList = []
+    let targetQs = []
 
     for (let index = 0; index < this.batchSize; index++) {
         let info = miniBatch[index]
         let maxFutureQ = info.reward
 
         if (!info.done)
-            maxFutureQ += this.discountFactor * this.GetMaxValue(newQsList[index])
+            maxFutureQ += this.gamma * this.GetMaxValue(nextQs[index])
 
-        let targetQ = currentQsList[index].slice()
+        let targetQ = currQs[index].slice()
         targetQ[info.action] = (1 - this.alpha) * targetQ[info.action] + this.alpha * maxFutureQ
-        targetQsList.push(targetQ)
+        targetQs.push(targetQ)
     }
 
-    this.model.TrainOnBatchWithOutput(currentStates, targetQsList, currentQsList, this.optimizer, this.loss)
+    this.model.TrainOnBatchWithOutput(currStates, targetQs, currQs, this.optimizer, this.loss)
 }
 
-DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards) {
+DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards) {
     if (episode >= trainSteps)
         return
 
@@ -148,23 +139,23 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
             action = this.environment.actionSpace.Sample()
         }
         else {
-            action = this.model.PredictArgmax(observation)
+            action = this.model.PredictArgmax(state)
         }
 
         let step = this.environment.Step(action)
 
         replayMemory.push({
-            observation: observation,
+            state: state,
             action: action,
             reward: step.reward,
-            newObservation: step.state,
+            nextState: step.state,
             done: step.done
         })
 
         if (stepsToUpdateTargetModel % this.trainModelPeriod == 0 || done)
             this.Train(replayMemory)
 
-        observation = step.state
+        state = step.state
         totalTrainingRewards += step.reward
         done = step.done
     }
@@ -186,14 +177,14 @@ DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, replayMemor
 
         done = false
         totalTrainingRewards = 0
-        observation = this.environment.Reset()
+        state = this.environment.Reset()
     }
 
-    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, observation, done, rewards))
+    window.requestAnimationFrame(() => this.Step(trainSteps, episode, epsilon, replayMemory, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards))
 }
 
 DeepQNetwork.prototype.Run = function(trainSteps = Infinity) {
-    let observation = this.environment.Reset()
+    let state = this.environment.Reset()
 
-    this.Step(trainSteps, 0, 1, [], 0, 0, observation, false, [])
+    this.Step(trainSteps, 0, 1, [], 0, 0, state, false, [])
 }
