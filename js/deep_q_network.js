@@ -9,6 +9,7 @@ function DeepQNetwork(environment, rewardCanvas, config) {
     this.optimizer = new Optimizer(config.learningRate, 0, config.optimizer)
     this.loss = new Huber(1)
 
+    this.ddqn = config.ddqn
     this.model = this.InitAgent(config.agentArchitecture)
     this.targetModel = this.InitAgent(config.agentArchitecture)
     this.targetModel.SetWeights(this.model)
@@ -68,8 +69,8 @@ DeepQNetwork.prototype.DrawRewards = function(rewards, minRewards = 10) {
     this.rewardCtx.stroke()
 
     this.rewardCtx.fillStyle = '#000'
-    this.rewardCtx.font = '10px sans-serif'
-    this.rewardCtx.textAlign = 'center'
+    this.rewardCtx.font = `${width / 20}px sans-serif`
+    this.rewardCtx.textAlign = 'left'
     this.rewardCtx.textBaseline = 'bottom'
     this.rewardCtx.fillText(`${maxReward.toFixed(2)}`, padding, padding)
     this.rewardCtx.textBaseline = 'top'
@@ -102,24 +103,31 @@ DeepQNetwork.prototype.Train = function() {
     let currStates = miniBatch.map((v) => v.state)
     let nextStates = miniBatch.map((v) => v.nextState)
 
-    let currQs = this.model.Forward(currStates)
-    let nextQs = this.targetModel.Forward(nextStates)
+    let targetVal = this.targetModel.Forward(nextStates)
+    let targetNext = this.ddqn ? this.model.Forward(nextStates) : null
+    let target = this.model.Forward(currStates)
 
     let targetQs = []
 
     for (let index = 0; index < this.batchSize; index++) {
         let info = miniBatch[index]
-        let maxFutureQ = info.reward
+        let targetQ = target[index].slice()
+        targetQ[info.action] = info.reward
 
-        if (!info.done)
-            maxFutureQ += this.gamma * Max(nextQs[index])
+        if (!info.done) {
+            if (this.ddqn) {
+                targetQ[info.action] += this.gamma * targetVal[index][Argmax(targetNext[index])]
+            }
+            else {
+                targetQ[info.action] += this.gamma * Max(targetVal[index])
+            }
+        }
 
-        let targetQ = currQs[index].slice()
-        targetQ[info.action] = (1 - this.alpha) * targetQ[info.action] + this.alpha * maxFutureQ
+        targetQ[info.action] = (1 - this.alpha) * target[index][info.action] + this.alpha * targetQ[info.action]
         targetQs.push(targetQ)
     }
 
-    this.model.TrainOnBatchWithOutput(currStates, targetQs, currQs, this.optimizer, this.loss)
+    this.model.TrainOnBatchWithOutput(currStates, targetQs, target, this.optimizer, this.loss)
 }
 
 DeepQNetwork.prototype.Step = function(trainSteps, episode, epsilon, stepsToUpdateTargetModel, totalTrainingRewards, state, done, rewards) {
