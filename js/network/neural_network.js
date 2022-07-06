@@ -5,9 +5,19 @@ function NeuralNetwork(inputs) {
 }
 
 NeuralNetwork.prototype.AddLayer = function(description) {
-    let layer = new FullyConnectedLayer(this.outputs, description['size'], description['activation'])
+    let layer = null
+
+    if (description.type == 'fc') {
+        layer = new FullyConnectedLayer(this.outputs, description['size'], description['activation'])
+        this.outputs = description['size']
+    }
+    else if (description.type == 'softmax') {
+        layer = new SoftmaxLayer(this.outputs)
+    }
+    else 
+        throw new Error(`Unknown layer type "${description.type}"`)
+
     this.layers.push(layer)
-    this.outputs = layer.outputs
 }
 
 NeuralNetwork.prototype.SetBatchSize = function(batchSize) {
@@ -54,6 +64,11 @@ NeuralNetwork.prototype.Backward = function(x, deltas) {
     }
 }
 
+NeuralNetwork.prototype.UpdateWeights = function(optimizer) {
+    for (let layer of this.layers)
+        layer.UpdateWeights(optimizer)
+}
+
 NeuralNetwork.prototype.Predict = function(x) {
     x = this.layers[0].ForwardOnce(x)
 
@@ -95,9 +110,7 @@ NeuralNetwork.prototype.TrainOnBatchWithOutput = function(x, y, output, optimize
 
     this.ZeroGradients()
     this.Backward(x, deltas)
-
-    for (let layer of this.layers)
-        layer.UpdateWeights(optimizer)
+    this.UpdateWeights(optimizer)
 
     return loss
 }

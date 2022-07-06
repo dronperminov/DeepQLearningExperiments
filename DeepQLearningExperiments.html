@@ -22,7 +22,8 @@
 
     <script src="js/random.js"></script>
 
-    <script src="js/network/fully_connected_layer.js"></script>
+    <script src="js/network/layers/fully_connected_layer.js"></script>
+    <script src="js/network/layers/softmax_layer.js"></script>
     <script src="js/network/loss.js"></script>
     <script src="js/network/optimizer.js"></script>
     <script src="js/network/weight.js"></script>
@@ -54,9 +55,12 @@
             batchSize: 128,
             minReplaySize: 1000,
 
+            learningRate: 0.1,
+            optimizer: 'sgd',
+
             maxEpsilon: 1,
             minEpsilon: 0.01,
-            decay: 0.01,
+            decay: 0.004,
             alpha: 0.7,
             discountFactor: 0.618,
 
@@ -64,7 +68,7 @@
             updateTargetModelPeriod: 100,
 
             agentArchitecture: [
-                {size: 256, activation: 'relu'}
+                {type: 'fc', size: 256, activation: 'relu'}
             ]
         }
 

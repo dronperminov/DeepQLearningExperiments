@@ -5,7 +5,7 @@ function DeepQNetwork(environment, rewardCanvas, config) {
 
     this.batchSize = config.batchSize
     this.minReplaySize = Math.max(config.minReplaySize, this.batchSize)
-    this.optimizer = new Optimizer(0.1, 0, 'sgd')
+    this.optimizer = new Optimizer(config.learningRate, 0, config.optimizer)
     this.loss = new Huber(1)
 
     this.model = this.InitAgent(config.agentArchitecture)
@@ -30,7 +30,7 @@ DeepQNetwork.prototype.InitAgent = function(architecture) {
     for (let layer of architecture)
         agent.AddLayer(layer)
 
-    agent.AddLayer({size: outputs, activation: ''})
+    agent.AddLayer({type: 'fc', size: outputs, activation: ''})
     agent.SetBatchSize(this.batchSize)
 
     return agent
