@@ -1,8 +1,4 @@
-function CartPole(canvas, infoBox) {
-    this.canvas = canvas
-    this.ctx = canvas.getContext('2d')
-    this.infoBox = infoBox
-
+function CartPole() {
     this.gravity = 9.8
     this.cartMass = 1.0
     this.poleMass = 0.1
@@ -68,21 +64,20 @@ CartPole.prototype.Step = function(action) {
     this.maxSteps = Math.max(this.steps, this.maxSteps)
 
     let done = Math.abs(this.state.x) > this.xThreshold || Math.abs(this.state.theta) > this.thetaThreshold
-    let reward = 1 - (Math.abs(this.state.x) / this.xThreshold + Math.abs(this.state.theta) / this.thetaThreshold) / 2
 
     return {
         state: this.StateToVector(),
-        reward: reward,
+        reward: 1,
         done: done
     }
 }
 
-CartPole.prototype.Draw = function() {
+CartPole.prototype.Draw = function(ctx, infoBox) {
     if (this.state == null)
         return null
 
-    let width = this.canvas.width
-    let height = this.canvas.height
+    let width = ctx.canvas.width
+    let height = ctx.canvas.height
     let worldWidth = this.xThreshold * 2
     let scale = width / worldWidth
 
@@ -96,35 +91,35 @@ CartPole.prototype.Draw = function() {
 
     let axlOffset = cartHeight / 4
 
-    this.ctx.clearRect(0, 0, width, height)
-    this.ctx.fillStyle = '#000'
-    this.ctx.fillRect(cartX - cartWidth / 2, cartY - cartHeight / 2, cartWidth, cartHeight)
+    ctx.clearRect(0, 0, width, height)
+    ctx.fillStyle = '#000'
+    ctx.fillRect(cartX - cartWidth / 2, cartY - cartHeight / 2, cartWidth, cartHeight)
 
-    this.ctx.beginPath()
-    this.ctx.strokeStyle = '#000'
-    this.ctx.moveTo(0, cartY)
-    this.ctx.lineTo(width, cartY)
-    this.ctx.stroke()
+    ctx.beginPath()
+    ctx.strokeStyle = '#000'
+    ctx.moveTo(0, cartY)
+    ctx.lineTo(width, cartY)
+    ctx.stroke()
 
-    this.ctx.save()
-    this.ctx.translate(cartX, cartY - axlOffset)
-    this.ctx.rotate(this.state.theta)
-    this.ctx.fillStyle = '#ca9865'
-    this.ctx.fillRect(-poleWidth / 2, -poleLen, poleWidth, poleLen)
-    this.ctx.restore()
+    ctx.save()
+    ctx.translate(cartX, cartY - axlOffset)
+    ctx.rotate(this.state.theta)
+    ctx.fillStyle = '#ca9865'
+    ctx.fillRect(-poleWidth / 2, -poleLen, poleWidth, poleLen)
+    ctx.restore()
 
-    this.ctx.beginPath()
-    this.ctx.fillStyle = '#8184cb'
-    this.ctx.arc(cartX, cartY - axlOffset, poleWidth / 2, 0, Math.PI * 2)
-    this.ctx.fill()
+    ctx.beginPath()
+    ctx.fillStyle = '#8184cb'
+    ctx.arc(cartX, cartY - axlOffset, poleWidth / 2, 0, Math.PI * 2)
+    ctx.fill()
 
-    this.ctx.font = '16px sans-serif'
-    this.ctx.textAlign = 'left'
-    this.ctx.textBaseline = 'bottom'
-    this.ctx.fillStyle = '#888'
-    this.ctx.fillText(`x: ${this.state.x.toFixed(3)}`, 5, height - 25)
-    this.ctx.fillText(`theta: ${this.state.theta.toFixed(3)}`, 5, height - 5)
+    ctx.font = '16px sans-serif'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'bottom'
+    ctx.fillStyle = '#888'
+    ctx.fillText(`x: ${this.state.x.toFixed(3)}`, 5, height - 25)
+    ctx.fillText(`theta: ${this.state.theta.toFixed(3)}`, 5, height - 5)
 
-    this.infoBox.innerText = `Текущее число шагов: ${this.steps}\n`
-    this.infoBox.innerText += `Максимальное число шагов: ${this.maxSteps}\n`
+    infoBox.innerText = `Текущее число шагов: ${this.steps}\n`
+    infoBox.innerText += `Максимальное число шагов: ${this.maxSteps}\n`
 }

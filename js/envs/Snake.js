@@ -8,10 +8,7 @@ const SNAKE_WALL = 'wall'
 const SNAKE_EAT_FOOD = 'eat food'
 const SNAKE_DEFAULT = 'default'
 
-function Snake(canvas, infoBox, fieldWidth = 14, fieldHeight = 9) {
-    this.canvas = canvas
-    this.ctx = canvas.getContext('2d')
-    this.infoBox = infoBox
+function Snake(fieldWidth = 14, fieldHeight = 9) {
     this.fieldWidth = fieldWidth
     this.fieldHeight = fieldHeight
 
@@ -256,43 +253,59 @@ Snake.prototype.Step = function(action) {
     }
 }
 
-Snake.prototype.Draw = function() {
-    if (this.snake == null)
-        return null
-
-    let width = this.canvas.width
-    let height = this.canvas.height
-    let cellWidth = width / (this.fieldWidth + 1)
-    let cellHeight = height / (this.fieldHeight + 1)
-
-    this.ctx.clearRect(0, 0, width, height)
-
-    this.ctx.strokeStyle = '#ccc'
-    this.ctx.beginPath()
+Snake.prototype.DrawCells = function(ctx, cellWidth, cellHeight) {
+    ctx.strokeStyle = '#ccc'
+    ctx.beginPath()
 
     for (let i = 0; i <= this.fieldHeight; i++)
         for (let j = 0; j <= this.fieldWidth; j++)
-            this.ctx.rect(j * cellWidth, i * cellHeight, cellWidth, cellHeight)
+            ctx.rect(j * cellWidth, i * cellHeight, cellWidth, cellHeight)
 
-    this.ctx.stroke()
+    ctx.stroke()
+}
 
+Snake.prototype.DrawSnake = function(ctx, cellWidth, cellHeight) {
     for (let p of this.snake) {
-        this.ctx.fillStyle = '#4caf50'
-        this.ctx.beginPath()
-        this.ctx.rect(p.x * cellWidth, p.y * cellHeight, cellWidth, cellHeight)
-        this.ctx.fill()
-        this.ctx.stroke()
+        ctx.fillStyle = p == this.snake[0] ? '#009688' : '#4caf50'
+        ctx.beginPath()
+        ctx.rect(p.x * cellWidth, p.y * cellHeight, cellWidth, cellHeight)
+        ctx.fill()
+        ctx.stroke()
     }
+}
 
-    this.ctx.fillStyle = '#f44336'
-    this.ctx.beginPath()
-    this.ctx.rect(this.food.x * cellWidth, this.food.y * cellHeight, cellWidth, cellHeight)
-    this.ctx.fill()
-    this.ctx.stroke()
+Snake.prototype.DrawFood = function(ctx, cellWidth, cellHeight) {
+    ctx.fillStyle = '#f44336'
+    ctx.beginPath()
+    ctx.rect(this.food.x * cellWidth, this.food.y * cellHeight, cellWidth, cellHeight)
+    ctx.fill()
+    ctx.stroke()
+}
 
+Snake.prototype.DrawInfo = function(infoBox) {
     let total = (this.wallEnd + this.eatSelfEnd) / 100
-    this.infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
-    this.infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}\n`
-    if (total > 0)
-        this.infoBox.innerText += `Окончание: стена: ${this.wallEnd} (${(this.wallEnd / total).toFixed(2)}%), змея: ${this.eatSelfEnd} (${(this.eatSelfEnd / total).toFixed(2)}%)`
+
+    infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
+    infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}\n`
+
+    if (total == 0)
+        return
+
+    infoBox.innerText += `Окончание: стена: ${this.wallEnd} (${(this.wallEnd / total).toFixed(2)}%), змея: ${this.eatSelfEnd} (${(this.eatSelfEnd / total).toFixed(2)}%)`
+}
+
+Snake.prototype.Draw = function(ctx, infoBox) {
+    if (this.snake == null)
+        return null
+
+    let width = ctx.canvas.width
+    let height = ctx.canvas.height
+    let cellWidth = width / (this.fieldWidth + 1)
+    let cellHeight = height / (this.fieldHeight + 1)
+
+    ctx.clearRect(0, 0, width, height)
+    this.DrawCells(ctx, cellWidth, cellHeight)
+    this.DrawSnake(ctx, cellWidth, cellHeight)
+    this.DrawFood(ctx, cellWidth, cellHeight)
+    this.DrawInfo(infoBox)
 }

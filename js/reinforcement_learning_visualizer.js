@@ -1,8 +1,14 @@
-function ReinforcementLearningVisualizer(algorithm, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn) {
+function ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn) {
     this.algorithm = algorithm
+    this.environment = algorithm.environment
+
+    this.environmentCanvas = environmentCanvas
+    this.environmentCtx = environmentCanvas.getContext('2d')
+    this.environmentInfoBox = environmentInfoBox
 
     this.rewardCanvas = rewardCanvas
     this.rewardCtx = this.rewardCanvas.getContext('2d')
+    this.rewards = []
 
     this.runBtn = runBtn
     this.stepBtn = stepBtn
@@ -18,21 +24,25 @@ function ReinforcementLearningVisualizer(algorithm, rewardCanvas, runBtn, stepBt
     this.StepAnimation()
 }
 
-ReinforcementLearningVisualizer.prototype.DrawRewards = function(rewards, minRewards = 10) {
+ReinforcementLearningVisualizer.prototype.DrawEnvironment = function() {
+    this.environment.Draw(this.environmentCtx, this.environmentInfoBox)
+}
+
+ReinforcementLearningVisualizer.prototype.DrawRewards = function(minRewards = 10) {
     let width = this.rewardCanvas.width
     let height = this.rewardCanvas.height
     let padding = 15
 
     this.rewardCtx.clearRect(0, 0, width, height)
 
-    if (rewards.length == 0)
+    if (this.rewards.length == 0)
         return
 
-    let count = Math.max(rewards.length, minRewards)
+    let count = Math.max(this.rewards.length, minRewards)
     let maxReward = -Infinity
     let minReward = Infinity
 
-    for (let reward of rewards) {
+    for (let reward of this.rewards) {
         maxReward = Math.max(maxReward, reward)
         minReward = Math.min(minReward, reward)
     }
@@ -52,14 +62,14 @@ ReinforcementLearningVisualizer.prototype.DrawRewards = function(rewards, minRew
     this.rewardCtx.textBaseline = 'top'
     this.rewardCtx.fillText(`${minReward.toFixed(2)}`, 2, height - padding + 2)
     this.rewardCtx.textAlign = 'right'
-    this.rewardCtx.fillText(`${rewards.length}`, padding + (rewards.length - 1) / (count - 1) * (width - 2 * padding), height - padding + 2)
+    this.rewardCtx.fillText(`${this.rewards.length}`, padding + (this.rewards.length - 1) / (count - 1) * (width - 2 * padding), height - padding + 2)
 
     this.rewardCtx.strokeStyle = '#f00'
     this.rewardCtx.beginPath()
 
-    for (let i = 0; i < rewards.length; i++) {
+    for (let i = 0; i < this.rewards.length; i++) {
         let x = padding + i / (count - 1) * (width - 2 * padding)
-        let y = height - padding - ((rewards[i] - minReward) / (maxReward - minReward)) * (height - 2 * padding)
+        let y = height - padding - ((this.rewards[i] - minReward) / (maxReward - minReward)) * (height - 2 * padding)
 
         if (i == 0)
             this.rewardCtx.moveTo(x, y)
@@ -71,10 +81,10 @@ ReinforcementLearningVisualizer.prototype.DrawRewards = function(rewards, minRew
 }
 
 ReinforcementLearningVisualizer.prototype.Reset = function() {
-    this.isRun = false
-    this.algorithm.Reset()
     this.Stop()
-    this.DrawRewards([])
+    this.algorithm.Reset()
+    this.DrawEnvironment()
+    this.DrawRewards()
 }
 
 ReinforcementLearningVisualizer.prototype.Start = function() {
@@ -97,17 +107,21 @@ ReinforcementLearningVisualizer.prototype.StartStop = function() {
 }
 
 ReinforcementLearningVisualizer.prototype.Step = function() {
-    if (!this.algorithm.Step())
-        return
+    let step = this.algorithm.Step()
+    this.DrawEnvironment()
 
-    this.DrawRewards(this.algorithm.rewards)
+    if (step.done) {
+        this.rewards.push(step.reward)
+        this.algorithm.ResetEpisode()
+        this.DrawRewards()
+    }
+
+    return step.done
 }
 
 ReinforcementLearningVisualizer.prototype.StepEpsiode = function() {
-    if (this.algorithm.Step()) {
-        this.DrawRewards(this.algorithm.rewards)
+    if (this.Step())
         return
-    }
 
     window.requestAnimationFrame(() => this.StepEpsiode())
 }

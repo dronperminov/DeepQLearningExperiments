@@ -62,8 +62,8 @@
         rewardCanvas.width = 600
         rewardCanvas.height = 400
 
-        // let environment = new CartPole(environmentCanvas, environmentInfoBox)
-        let environment = new Snake(environmentCanvas, environmentInfoBox)
+        // let environment = new CartPole()
+        let environment = new Snake()
 
         let config = {
             batchSize: 128,
@@ -88,7 +88,7 @@
         }
 
         let dqn = new DeepQNetwork(environment, config)
-        let visualizer = new ReinforcementLearningVisualizer(dqn, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn)
+        let visualizer = new ReinforcementLearningVisualizer(dqn, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn)
     </script>
 </body>
 </html>

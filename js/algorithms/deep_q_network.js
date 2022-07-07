@@ -80,22 +80,18 @@ DeepQNetwork.prototype.Train = function() {
 }
 
 DeepQNetwork.prototype.Reset = function() {
-    this.state = this.environment.Reset(true)
-    this.environment.Draw()
-
     this.done = false
     this.episode = 0
     this.epsilon = this.maxEpsilon
     this.totalTrainingRewards = 0
     this.stepsToUpdateTargetModel = 0
-    this.rewards = []
+    this.state = this.environment.Reset(true)
 }
 
 DeepQNetwork.prototype.Step = function() {
     let action = this.GetAction(this.state, this.epsilon)
     let step = this.environment.Step(action)
 
-    this.environment.Draw()
     this.replayBuffer.Add(this.state, action, step.reward, step.state, step.done)
     this.done = step.done
 
@@ -106,20 +102,21 @@ DeepQNetwork.prototype.Step = function() {
     this.totalTrainingRewards += step.reward
 
     if (!this.done)
-        return false
+        return { done: false }
 
     if (this.stepsToUpdateTargetModel >= this.updateTargetModelPeriod) {
         this.targetModel.SetWeights(this.model)
         this.stepsToUpdateTargetModel = 0
     }
 
-    this.rewards.push(this.totalTrainingRewards)
+    return { done: true, reward: this.totalTrainingRewards }
+}
+
+DeepQNetwork.prototype.ResetEpisode = function() {
     this.epsilon = this.minEpsilon + (this.maxEpsilon - this.minEpsilon) * Math.exp(-this.decay * this.episode)
     this.episode++
 
     this.state = this.environment.Reset()
-    this.environment.Draw()
     this.done = false
     this.totalTrainingRewards = 0
-    return true
 }
