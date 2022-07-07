@@ -55,22 +55,22 @@ Optimizer.prototype.SetRegularizationType = function(regularizationType) {
     this.regularizationType = regularizationType
 }
 
-Optimizer.prototype.UpdateSGD = function(weight, batchSize) {
-    weight.value -= this.learningRate / batchSize * weight.grad
+Optimizer.prototype.UpdateSGD = function(weight) {
+    weight.value -= this.learningRate * weight.grad
 }
 
-Optimizer.prototype.UpdateMomentumSGD = function(weight, batchSize) {
-    weight.param1 = this.beta * weight.param1 + this.learningRate / batchSize * weight.grad
+Optimizer.prototype.UpdateMomentumSGD = function(weight) {
+    weight.param1 = this.beta * weight.param1 + this.learningRate * weight.grad
     weight.value -= weight.param1
 }
 
-Optimizer.prototype.UpdateNAG = function(weight, batchSize) {
+Optimizer.prototype.UpdateNAG = function(weight) {
     let prev = weight.param1
-    weight.param1 = this.beta * weight.param1 - this.learningRate / batchSize * weight.grad
+    weight.param1 = this.beta * weight.param1 - this.learningRate * weight.grad
     weight.value += this.beta * (weight.param1 - prev) + weight.param1
 }
 
-Optimizer.prototype.UpdateNAdam = function(weight, batchSize) {
+Optimizer.prototype.UpdateNAdam = function(weight) {
     let mt1 = weight.param1 / (1 - Math.pow(this.beta1, this.epoch))
 
     weight.param1 = this.beta1 * weight.param1 + (1 - this.beta1) * weight.grad
@@ -79,47 +79,49 @@ Optimizer.prototype.UpdateNAdam = function(weight, batchSize) {
     let Vt = weight.param1 / (1 - Math.pow(this.beta1, this.epoch))
     let St = weight.param2 / (1 - Math.pow(this.beta2, this.epoch))
 
-    weight.value -= this.learningRate / batchSize * (this.beta1 * mt1 + (1 - this.beta1) / (1 - Math.pow(this.beta1, this.epoch)) * weight.grad) / (Math.sqrt(St) + 1e-7)
+    weight.value -= this.learningRate * (this.beta1 * mt1 + (1 - this.beta1) / (1 - Math.pow(this.beta1, this.epoch)) * weight.grad) / (Math.sqrt(St) + 1e-7)
 }
 
-Optimizer.prototype.UpdateAdam = function(weight, batchSize) {
+Optimizer.prototype.UpdateAdam = function(weight) {
     weight.param1 = this.beta1 * weight.param1 + (1 - this.beta1) * weight.grad
     weight.param2 = this.beta2 * weight.param2 + (1 - this.beta2) * weight.grad * weight.grad
 
     let mt = weight.param1 / (1 - Math.pow(this.beta1, this.epoch))
     let vt = weight.param2 / (1 - Math.pow(this.beta2, this.epoch))
 
-    weight.value -= this.learningRate / batchSize * mt / (Math.sqrt(vt) + 1e-8)
+    weight.value -= this.learningRate * mt / (Math.sqrt(vt) + 1e-8)
 }
 
-Optimizer.prototype.UpdateAdagrad = function(weight, batchSize) {
+Optimizer.prototype.UpdateAdagrad = function(weight) {
     weight.param1 += weight.grad * weight.grad
-    weight.value -= this.learningRate / batchSize * weight.grad / Math.sqrt(weight.param1 + 1e-8)
+    weight.value -= this.learningRate * weight.grad / Math.sqrt(weight.param1 + 1e-8)
 }
 
-Optimizer.prototype.UpdateAdaMax = function(weight, batchSize) {
+Optimizer.prototype.UpdateAdaMax = function(weight) {
     weight.param1 = this.beta1 * weight.param1 + (1 - this.beta1) * weight.grad
     weight.param2 = Math.max(this.beta2 * weight.param2, Math.abs(weight.grad))
 
     let mt = weight.param1 / (1 - Math.pow(this.beta1, this.epoch))
 
-    weight.value -= this.learningRate / batchSize * mt / (weight.param2 + 1e-8)
+    weight.value -= this.learningRate * mt / (weight.param2 + 1e-8)
 }
 
-Optimizer.prototype.UpdateRMSprop = function(weight, batchSize) {
+Optimizer.prototype.UpdateRMSprop = function(weight) {
     weight.param1 = weight.param1 * this.beta1 + (1 - this.beta1) * weight.grad * weight.grad
-    weight.value -= this.learningRate / batchSize * weight.grad / Math.sqrt(weight.param1 + 1e-8)
+    weight.value -= this.learningRate * weight.grad / Math.sqrt(weight.param1 + 1e-8)
 }
 
-Optimizer.prototype.UpdateAMSgrad = function(weight, batchSize) {
+Optimizer.prototype.UpdateAMSgrad = function(weight) {
     weight.param1 = this.beta1 * weight.param1 + (1 - this.beta1) * weight.grad
     weight.param2 = this.beta2 * weight.param2 + (1 - this.beta2) * weight.grad * weight.grad
     weight.param3 = Math.max(weight.param2, weight.param3)
 
-    weight.value -= this.learningRate / batchSize * weight.param1 / (Math.sqrt(weight.param3) + 1e-8)
+    weight.value -= this.learningRate * weight.param1 / (Math.sqrt(weight.param3) + 1e-8)
 }
 
 Optimizer.prototype.Update = function(weight, batchSize) {
+    weight.grad /= batchSize
+
     if (this.regularizationType == 'l1') {
         weight.grad += this.lambda * Math.sign(weight.value)
     }
@@ -127,7 +129,7 @@ Optimizer.prototype.Update = function(weight, batchSize) {
         weight.grad += this.lambda * weight.value
     }
 
-    this.update(weight, batchSize)
+    this.update(weight)
 }
 
 Optimizer.prototype.UpdateEpoch = function() {
