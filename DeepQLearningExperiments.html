@@ -12,6 +12,7 @@
         <input type="submit" value="Шаг" id="step-btn">
         <input type="submit" value="Эпизод" id="step-episode-btn">
         <input type="submit" value="Сброс" id="reset-btn">
+        <label><input type="checkbox" id="draw-environment-box" checked>Рисовать среду</label>
     </div>
 
     <div class="environment">
@@ -44,6 +45,7 @@
     <script src="js/envs/Snake.js"></script>
 
     <script src="js/algorithms/deep_q_network.js"></script>
+    <script src="js/algorithms/reinforce_policy_gradients.js"></script>
     <script src="js/reinforcement_learning_visualizer.js"></script>
 
     <script>
@@ -51,6 +53,7 @@
         let stepBtn = document.getElementById("step-btn")
         let stepEpisodeBtn = document.getElementById("step-episode-btn")
         let resetBtn = document.getElementById("reset-btn")
+        let drawEnvironmentBox = document.getElementById("draw-environment-box")
 
         let environmentCanvas = document.getElementById("env-canvas")
         let rewardCanvas = document.getElementById("reward-canvas")
@@ -62,33 +65,44 @@
         rewardCanvas.width = 600
         rewardCanvas.height = 400
 
-        // let environment = new CartPole()
-        let environment = new Snake()
+        let environment = new CartPole()
+        // let environment = new Snake()
 
-        let config = {
-            batchSize: 128,
-            minReplaySize: 1000,
-            maxReplaySize: 10000,
+        // let dqnConfig = {
+        //     batchSize: 128,
+        //     minReplaySize: 1000,
+        //     maxReplaySize: 10000,
 
-            learningRate: 0.1,
+        //     learningRate: 0.1,
+        //     optimizer: 'sgd',
+
+        //     maxEpsilon: 1,
+        //     minEpsilon: 0.01,
+        //     decay: 0.004,
+        //     alpha: 0.7,
+        //     gamma: 0.618,
+
+        //     trainModelPeriod: 4,
+        //     updateTargetModelPeriod: 100,
+
+        //   agentArchitecture: [
+        //       {type: 'fc', size: 256, activation: 'relu'}
+        //   ]
+        // }
+
+        let rpgConfig = {
+            learningRate: 0.01,
             optimizer: 'sgd',
-
-            maxEpsilon: 1,
-            minEpsilon: 0.01,
-            decay: 0.004,
-            alpha: 0.7,
-            gamma: 0.618,
-
-            trainModelPeriod: 4,
-            updateTargetModelPeriod: 100,
+            gamma: 0.9,
 
             agentArchitecture: [
-                {type: 'fc', size: 256, activation: 'relu'}
+                {type: 'fc', size: 256, activation: 'relu'},
             ]
         }
 
-        let dqn = new DeepQNetwork(environment, config)
-        let visualizer = new ReinforcementLearningVisualizer(dqn, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn)
+        // let algorithm = new DeepQNetwork(environment, dqnNonfig)
+        let algorithm = new ReinforcePolicyGradients(environment, rpgConfig)
+        let visualizer = new ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn, drawEnvironmentBox)
     </script>
 </body>
 </html>
