@@ -1,4 +1,4 @@
-function ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn) {
+function ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn, drawEnvironmentBox) {
     this.algorithm = algorithm
     this.environment = algorithm.environment
 
@@ -8,12 +8,12 @@ function ReinforcementLearningVisualizer(algorithm, environmentCanvas, environme
 
     this.rewardCanvas = rewardCanvas
     this.rewardCtx = this.rewardCanvas.getContext('2d')
-    this.rewards = []
 
     this.runBtn = runBtn
     this.stepBtn = stepBtn
     this.stepEpisodeBtn = stepEpisodeBtn
     this.resetBtn = resetBtn
+    this.drawEnvironmentBox = drawEnvironmentBox
 
     this.runBtn.addEventListener('click', () => this.StartStop())
     this.stepBtn.addEventListener('click', () => { this.Stop(); this.Step() })
@@ -25,6 +25,9 @@ function ReinforcementLearningVisualizer(algorithm, environmentCanvas, environme
 }
 
 ReinforcementLearningVisualizer.prototype.DrawEnvironment = function() {
+    if (!this.drawEnvironmentBox.checked)
+        return
+
     this.environment.Draw(this.environmentCtx, this.environmentInfoBox)
 }
 
@@ -82,6 +85,8 @@ ReinforcementLearningVisualizer.prototype.DrawRewards = function(minRewards = 10
 
 ReinforcementLearningVisualizer.prototype.Reset = function() {
     this.Stop()
+
+    this.rewards = []
     this.algorithm.Reset()
     this.DrawEnvironment()
     this.DrawRewards()
