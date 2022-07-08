@@ -1,7 +1,6 @@
 function ReplayBuffer(maxSize = 10000) {
-    this.buffer = []
     this.maxSize = maxSize
-    this.position = 0
+    this.Clear()
 }
 
 ReplayBuffer.prototype.Add = function(state, action, reward, nextState, done) {
@@ -14,6 +13,11 @@ ReplayBuffer.prototype.Add = function(state, action, reward, nextState, done) {
         this.buffer[this.position] = replay
         this.position = (this.position + 1) % this.maxSize
     }
+}
+
+ReplayBuffer.prototype.Clear = function() {
+    this.position = 0
+    this.buffer = []
 }
 
 ReplayBuffer.prototype.Length = function() {
