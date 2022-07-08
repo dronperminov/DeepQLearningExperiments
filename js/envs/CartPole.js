@@ -113,6 +113,5 @@ CartPole.prototype.Draw = function(ctx, infoBox) {
     ctx.arc(cartX, cartY - axlOffset, poleWidth / 2, 0, Math.PI * 2)
     ctx.fill()
 
-    infoBox.innerText = `Текущее число шагов: ${this.steps}\n`
-    infoBox.innerText += `Максимальное число шагов: ${this.maxSteps}\n`
+    infoBox.innerText = `Число шагов: ${this.steps} (максимальное: ${this.maxSteps})`
 }

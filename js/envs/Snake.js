@@ -302,8 +302,7 @@ Snake.prototype.DrawFood = function(ctx, cellWidth, cellHeight) {
 Snake.prototype.DrawInfo = function(infoBox) {
     let total = this.wall + this.eatSelf + this.noEat
 
-    infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
-    infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}\n`
+    infoBox.innerText = `Длина змеи: ${this.snake.length} (максимальная: ${this.maxLength})\n`
 
     if (total == 0)
         return
@@ -314,7 +313,7 @@ Snake.prototype.DrawInfo = function(infoBox) {
         `голод: ${this.noEat} (${(this.noEat / total * 100).toFixed(2)}%)`
     ]
 
-    infoBox.innerText += `Окончание: ${ends.join(', ')}`
+    infoBox.innerText += `Конец: ${ends.join(', ')}`
 }
 
 Snake.prototype.Draw = function(ctx, infoBox) {
