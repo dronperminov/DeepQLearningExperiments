@@ -6,6 +6,7 @@ const SNAKE_TURN_RIGHT = 2
 const SNAKE_EAT_SELF = 'eat self'
 const SNAKE_WALL = 'wall'
 const SNAKE_EAT_FOOD = 'eat food'
+const SNAKE_NO_EAT = 'no eat'
 const SNAKE_DEFAULT = 'default'
 
 function Snake(fieldWidth = 14, fieldHeight = 9) {
@@ -19,9 +20,7 @@ function Snake(fieldWidth = 14, fieldHeight = 9) {
     this.actionSpace = new DiscreteSpace(3)
     this.observationSpace = new UniformSpace(-1, 1, 43)
 
-    this.maxLength = SNAKE_INITIAL_LENGTH
-    this.wallEnd = 0
-    this.eatSelfEnd = 0
+    this.ResetInfo()
 }
 
 Snake.prototype.InitSnake = function() {
@@ -63,19 +62,32 @@ Snake.prototype.InitFood = function() {
 Snake.prototype.MoveSnake = function(dx, dy) {
     let head = this.snake[0]
 
-    if (head.x + dx < 0 || head.y + dy < 0 || head.x + dx > this.fieldWidth || head.y + dy > this.fieldHeight)
+    if (head.x + dx < 0 || head.y + dy < 0 || head.x + dx > this.fieldWidth || head.y + dy > this.fieldHeight) {
+        this.wall++
         return SNAKE_WALL
+    }
 
-    if (this.IsInsideSnake(head.x + dx, head.y + dy, 1))
+    if (this.IsInsideSnake(head.x + dx, head.y + dy, 1)) {
+        this.eatSelf++
         return SNAKE_EAT_SELF
+    }
 
     if (head.x + dx == this.food.x && head.y + dy == this.food.y) {
         this.snake.unshift({x: this.food.x, y: this.food.y})
-        this.maxLength = Math.max(this.snake.length, this.maxLength)
         this.food = this.InitFood()
+        this.maxLength = Math.max(this.snake.length, this.maxLength)
+        this.stepsWithoutFood = 0
+
         return SNAKE_EAT_FOOD
     }
-    
+
+    this.stepsWithoutFood++
+
+    if (this.stepsWithoutFood > this.fieldWidth * this.fieldHeight * 2) {
+        this.noEat++
+        return SNAKE_NO_EAT
+    }
+
     for (let i = this.snake.length - 1; i > 0; i--) {
         this.snake[i].x = this.snake[i - 1].x
         this.snake[i].y = this.snake[i - 1].y
@@ -95,13 +107,6 @@ Snake.prototype.IsCollision = function(point) {
         return true
 
     return this.IsInsideSnake(point.x, point.y)
-}
-
-Snake.prototype.DistanceToFood = function() {
-    let dx = this.snake[0].x - this.food.x
-    let dy = this.snake[0].y - this.food.y
-
-    return Math.abs(dx) + Math.abs(dy)
 }
 
 Snake.prototype.DistanceToCollision = function(x0, y0, dx, dy, fromHead = false) {
@@ -189,7 +194,14 @@ Snake.prototype.StateToVector = function() {
     ]
 }
 
-Snake.prototype.Reset = function(resetInfo = false) {
+Snake.prototype.ResetInfo = function() {
+    this.maxLength = SNAKE_INITIAL_LENGTH
+    this.wall = 0
+    this.eatSelf = 0
+    this.noEat = 0
+}
+
+Snake.prototype.Reset = function() {
     this.snake = this.InitSnake()
     this.food = this.InitFood()
     this.direction = {
@@ -197,13 +209,36 @@ Snake.prototype.Reset = function(resetInfo = false) {
         dy: -1
     }
 
-    if (resetInfo) {
-        this.maxLength = SNAKE_INITIAL_LENGTH
-        this.wallEnd = 0
-        this.eatSelfEnd = 0
-    }
+    this.stepsWithoutFood = 0
 
     return this.StateToVector()
+}
+
+Snake.prototype.GetReward = function(move) {
+    if (move == SNAKE_WALL)
+        return -100
+
+    if (move == SNAKE_EAT_SELF)
+        return -200
+
+    if (move == SNAKE_NO_EAT)
+        return -400
+
+    if (move == SNAKE_EAT_FOOD)
+        return 30
+
+    let prevDx = this.food.x - (this.snake[0].x - this.direction.dx)
+    let prevDy = this.food.y - (this.snake[0].y - this.direction.dy)
+    let prevDst = Math.abs(prevDx) + Math.abs(prevDy)
+
+    let currDx = this.food.x - this.snake[0].x
+    let currDy = this.food.y - this.snake[0].y
+    let currDst = Math.abs(currDx) + Math.abs(currDy)
+
+    if (currDst < prevDst)
+        return 0.5 / this.snake.length
+
+    return -1 / this.snake.length
 }
 
 Snake.prototype.Step = function(action) {
@@ -225,30 +260,12 @@ Snake.prototype.Step = function(action) {
         this.direction.dy = dx
     }
 
-    let prevDst = this.DistanceToFood()
     let move = this.MoveSnake(this.direction.dx, this.direction.dy)
-    let currDst = this.DistanceToFood()
-    let done = move == SNAKE_WALL || move == SNAKE_EAT_SELF
-    let reward = -1 / this.snake.length
-
-    if (done) {
-        reward = move == SNAKE_WALL ? -100 : -200
-
-        if (move == SNAKE_WALL)
-            this.wallEnd++
-        else
-            this.eatSelfEnd++
-    }
-    else if (move == SNAKE_EAT_FOOD) {
-        reward = 30
-    }
-    else if (currDst < prevDst) {
-        reward = 0.5 / this.snake.length
-    }
+    let done = move == SNAKE_WALL || move == SNAKE_EAT_SELF || move == SNAKE_NO_EAT
 
     return {
         state: this.StateToVector(),
-        reward: reward,
+        reward: this.GetReward(move),
         done: done
     }
 }
@@ -283,7 +300,7 @@ Snake.prototype.DrawFood = function(ctx, cellWidth, cellHeight) {
 }
 
 Snake.prototype.DrawInfo = function(infoBox) {
-    let total = (this.wallEnd + this.eatSelfEnd) / 100
+    let total = this.wall + this.eatSelf + this.noEat
 
     infoBox.innerText = `Текущая длина змеи: ${this.snake.length}\n`
     infoBox.innerText += `Максимальная длина змеи: ${this.maxLength}\n`
@@ -291,7 +308,13 @@ Snake.prototype.DrawInfo = function(infoBox) {
     if (total == 0)
         return
 
-    infoBox.innerText += `Окончание: стена: ${this.wallEnd} (${(this.wallEnd / total).toFixed(2)}%), змея: ${this.eatSelfEnd} (${(this.eatSelfEnd / total).toFixed(2)}%)`
+    let ends = [
+        `стена: ${this.wall} (${(this.wall / total * 100).toFixed(2)}%)`,
+        `змея: ${this.eatSelf} (${(this.eatSelf / total * 100).toFixed(2)}%)`,
+        `голод: ${this.noEat} (${(this.noEat / total * 100).toFixed(2)}%)`
+    ]
+
+    infoBox.innerText += `Окончание: ${ends.join(', ')}`
 }
 
 Snake.prototype.Draw = function(ctx, infoBox) {

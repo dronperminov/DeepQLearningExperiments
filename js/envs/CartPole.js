@@ -18,11 +18,15 @@ function CartPole() {
     this.observationSpace = new BoxSpace(low, high)
 
     this.state = null
-    this.maxSteps = 0
+    this.ResetInfo()
 }
 
 CartPole.prototype.StateToVector = function() {
     return [this.state.x, this.state.xDot, this.state.theta, this.state.thetaDot]
+}
+
+CartPole.prototype.ResetInfo = function() {
+    this.maxSteps = 0
 }
 
 CartPole.prototype.Reset = function(resetInfo = false) {
@@ -33,10 +37,6 @@ CartPole.prototype.Reset = function(resetInfo = false) {
         thetaDot: RandomUniform(-0.05, 0.05),
     }
     this.steps = 0
-
-    if (resetInfo) {
-        this.maxSteps = 0
-    }
 
     return this.StateToVector()
 }
@@ -112,13 +112,6 @@ CartPole.prototype.Draw = function(ctx, infoBox) {
     ctx.fillStyle = '#8184cb'
     ctx.arc(cartX, cartY - axlOffset, poleWidth / 2, 0, Math.PI * 2)
     ctx.fill()
-
-    ctx.font = '16px sans-serif'
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'bottom'
-    ctx.fillStyle = '#888'
-    ctx.fillText(`x: ${this.state.x.toFixed(3)}`, 5, height - 25)
-    ctx.fillText(`theta: ${this.state.theta.toFixed(3)}`, 5, height - 5)
 
     infoBox.innerText = `Текущее число шагов: ${this.steps}\n`
     infoBox.innerText += `Максимальное число шагов: ${this.maxSteps}\n`
