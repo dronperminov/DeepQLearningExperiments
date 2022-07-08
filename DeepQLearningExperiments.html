@@ -46,6 +46,8 @@
 
     <script src="js/algorithms/deep_q_network.js"></script>
     <script src="js/algorithms/reinforce_policy_gradients.js"></script>
+    <script src="js/algorithms/a2c.js"></script>
+
     <script src="js/reinforcement_learning_visualizer.js"></script>
 
     <script>
@@ -65,8 +67,8 @@
         rewardCanvas.width = 600
         rewardCanvas.height = 400
 
-        let environment = new CartPole()
-        // let environment = new Snake()
+        // let environment = new CartPole()
+        let environment = new Snake()
 
         // let dqnConfig = {
         //     batchSize: 128,
@@ -90,18 +92,33 @@
         //   ]
         // }
 
-        let rpgConfig = {
-            learningRate: 0.01,
-            optimizer: 'sgd',
-            gamma: 0.9,
+        // let rpgConfig = {
+        //     learningRate: 0.01,
+        //     optimizer: 'sgd',
+        //     gamma: 0.9,
 
-            agentArchitecture: [
+        //     agentArchitecture: [
+        //         {type: 'fc', size: 256, activation: 'relu'},
+        //     ]
+        // }
+
+        let acConfig = {
+            learningRate: 0.04,
+            optimizer: 'sgd',
+            gamma: 0.99,
+
+            actorArchitecture: [
+                {type: 'fc', size: 256, activation: 'relu'},
+            ],
+
+            criticArchitecture: [
                 {type: 'fc', size: 256, activation: 'relu'},
             ]
         }
 
         // let algorithm = new DeepQNetwork(environment, dqnNonfig)
-        let algorithm = new ReinforcePolicyGradients(environment, rpgConfig)
+        // let algorithm = new ReinforcePolicyGradients(environment, rpgConfig)
+        let algorithm = new AdvancedActorCritic(environment, acConfig)
         let visualizer = new ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn, drawEnvironmentBox)
     </script>
 </body>
