@@ -94,15 +94,8 @@ AdvancedActorCritic.prototype.UpdatePolicy = function() {
 }
 
 AdvancedActorCritic.prototype.Reset = function() {
-    this.done = false
-    this.totalTrainingRewards = 0
-    this.state = this.environment.Reset(true)
-
-    this.probs = []
-    this.critics = []
-    this.rewards = []
-    this.actions = []
-    this.states = []
+    this.environment.ResetInfo()
+    this.ResetEpisode()
 }
 
 AdvancedActorCritic.prototype.Step = function() {

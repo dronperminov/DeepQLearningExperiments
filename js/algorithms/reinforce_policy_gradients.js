@@ -64,14 +64,8 @@ ReinforcePolicyGradients.prototype.UpdatePolicy = function() {
 }
 
 ReinforcePolicyGradients.prototype.Reset = function() {
-    this.done = false
-    this.totalTrainingRewards = 0
-    this.state = this.environment.Reset(true)
-
-    this.probs = []
-    this.states = []
-    this.rewards = []
-    this.actions = []
+    this.environment.ResetInfo()
+    this.ResetEpisode()
 }
 
 ReinforcePolicyGradients.prototype.Step = function() {

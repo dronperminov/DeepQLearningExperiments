@@ -80,13 +80,12 @@ DeepQNetwork.prototype.Train = function() {
 }
 
 DeepQNetwork.prototype.Reset = function() {
-    this.done = false
-    this.episode = 0
+    this.environment.ResetInfo()
     this.replayBuffer.Clear()
-    this.epsilon = this.maxEpsilon
-    this.totalTrainingRewards = 0
+    this.episode = 0
     this.stepsToUpdateTargetModel = 0
-    this.state = this.environment.Reset(true)
+
+    this.ResetEpisode()
 }
 
 DeepQNetwork.prototype.Step = function() {
