@@ -2,6 +2,49 @@
     padding: 10px 0;
 }
 
+.environments {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-gap: 10px 30px;
+}
+
+.environment {
+    display: grid;
+    grid-template-areas:
+        'params params'
+        'environment reward'
+        'info info';
+    grid-gap: 5px;
+}
+
+.params-view {
+    grid-area: params;
+    font-weight: bold;
+    text-align: center;
+}
+
+.env-view {
+    grid-area: environment;
+}
+
+.reward-view {
+    grid-area: reward;
+}
+
+.env-info {
+    grid-area: info;
+}
+
 .env-view canvas {
     border: 1px solid #ccc;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 3/2;
+}
+
+.reward-view canvas {
+    border: 1px solid #ccc;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 3/2;
 }

@@ -15,17 +15,7 @@
         <label><input type="checkbox" id="draw-environment-box" checked>Рисовать среду</label>
     </div>
 
-    <div class="environment">
-        <div class="env-view">
-            <canvas id="env-canvas"></canvas>
-        </div>
-
-        <div class="env-info" id="env-info-box"></div>
-
-        <div class="reward-view">
-            <canvas id="reward-canvas"></canvas>
-        </div>
-    </div>
+    <div class="environments" id="environments-block"></div>
 
     <script src="js/functions.js"></script>
     <script src="js/replay_buffer.js"></script>
@@ -57,53 +47,81 @@
         let resetBtn = document.getElementById("reset-btn")
         let drawEnvironmentBox = document.getElementById("draw-environment-box")
 
-        let environmentCanvas = document.getElementById("env-canvas")
-        let rewardCanvas = document.getElementById("reward-canvas")
-        let environmentInfoBox = document.getElementById("env-info-box")
+        function MakeEnvironmentBlock(mainBlock, params) {
+            let block = document.createElement("div")
+            block.className = "environment"
 
-        environmentCanvas.width = 600
-        environmentCanvas.height = 400
+            let paramsView = document.createElement("div")
+            paramsView.className = "params-view"
+            paramsView.innerHTML = params
 
-        rewardCanvas.width = 600
-        rewardCanvas.height = 400
+            let envView = document.createElement("div")
+            envView.className = "env-view"
 
-        // let environment = new CartPole()
-        let environment = new Snake()
+            let envInfo = document.createElement("div")
+            envInfo.className = "env-info"
 
-        // let dqnConfig = {
-        //     batchSize: 128,
-        //     minReplaySize: 1000,
-        //     maxReplaySize: 10000,
+            let rewardView = document.createElement("div")
+            rewardView.className = "reward-view"
 
-        //     learningRate: 0.1,
-        //     optimizer: 'sgd',
+            block.appendChild(paramsView)
+            block.appendChild(envView)
+            block.appendChild(rewardView)
+            block.appendChild(envInfo)
+            mainBlock.appendChild(block)
 
-        //     maxEpsilon: 1,
-        //     minEpsilon: 0.01,
-        //     decay: 0.004,
-        //     alpha: 0.7,
-        //     gamma: 0.618,
+            let environmentCanvas = document.createElement("canvas")
+            envView.appendChild(environmentCanvas)
+            environmentCanvas.width = environmentCanvas.clientWidth
+            environmentCanvas.height = environmentCanvas.clientHeight
 
-        //     trainModelPeriod: 4,
-        //     updateTargetModelPeriod: 100,
+            let rewardCanvas = document.createElement("canvas")
+            rewardView.appendChild(rewardCanvas)
+            rewardCanvas.width = rewardCanvas.clientWidth
+            rewardCanvas.height = rewardCanvas.clientHeight
 
-        //   agentArchitecture: [
-        //       {type: 'fc', size: 256, activation: 'relu'}
-        //   ]
-        // }
+            return {
+                block: block,
+                environmentCanvas: environmentCanvas,
+                environmentInfoBox: envInfo,
+                rewardCanvas: rewardCanvas
+            }
+        }
 
-        // let rpgConfig = {
-        //     learningRate: 0.01,
-        //     optimizer: 'sgd',
-        //     gamma: 0.9,
+        let dqnConfig = {
+            batchSize: 128,
+            minReplaySize: 1000,
+            maxReplaySize: 10000,
 
-        //     agentArchitecture: [
-        //         {type: 'fc', size: 256, activation: 'relu'},
-        //     ]
-        // }
+            learningRate: 0.01,
+            optimizer: 'sgd',
 
-        let acConfig = {
-            learningRate: 0.04,
+            maxEpsilon: 1,
+            minEpsilon: 0.01,
+            decay: 0.004,
+            alpha: 1,
+            gamma: 0.618,
+
+            trainModelPeriod: 4,
+            updateTargetModelPeriod: 100,
+
+            agentArchitecture: [
+                {type: 'fc', size: 256, activation: 'relu'}
+            ]
+        }
+
+        let rpgConfig = {
+            learningRate: 0.01,
+            optimizer: 'sgd',
+            gamma: 0.99,
+
+            agentArchitecture: [
+                {type: 'fc', size: 256, activation: 'relu'},
+            ]
+        }
+
+        let a2cConfig = {
+            learningRate: 0.01,
             optimizer: 'sgd',
             gamma: 0.99,
 
@@ -116,10 +134,47 @@
             ]
         }
 
-        // let algorithm = new DeepQNetwork(environment, dqnNonfig)
-        // let algorithm = new ReinforcePolicyGradients(environment, rpgConfig)
-        let algorithm = new AdvancedActorCritic(environment, acConfig)
-        let visualizer = new ReinforcementLearningVisualizer(algorithm, environmentCanvas, environmentInfoBox, rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn, drawEnvironmentBox)
+        let gammas = [0.6, 0.8, 0.9, 0.99]
+        let algorithms = ['dqn', 'ddqn', 'rpg', 'a2c']
+        let mainBlock = document.getElementById("environments-block")
+        mainBlock.style.gridTemplateColumns = algorithms.map((v) => '1fr').join(' ')
+
+        let visualizers = []
+
+        for (let gamma of gammas) {
+            for (let algorithmName of algorithms) {
+                // let environment = new CartPole()
+                let environment = new Snake()
+                let algorithm
+                let params
+
+                if (algorithmName == 'dqn') {
+                    dqnConfig.gamma = gamma
+                    dqnConfig.ddqn = false
+                    params = `DQN (gamma: ${gamma})`
+                    algorithm = new DeepQNetwork(environment, dqnConfig)
+                }
+                else if (algorithmName == 'ddqn') {
+                    dqnConfig.gamma = gamma
+                    dqnConfig.ddqn = true
+                    params = `DDQN (gamma: ${gamma})`
+                    algorithm = new DeepQNetwork(environment, dqnConfig)
+                }
+                else if (algorithmName == 'rpg') {
+                    rpgConfig.gamma = gamma
+                    algorithm = new ReinforcePolicyGradients(environment, rpgConfig)
+                    params = `Reinforce PG (gamma: ${gamma})`
+                }
+                else if (algorithmName == 'a2c') {
+                    a2cConfig.gamma = gamma
+                    algorithm = new AdvancedActorCritic(environment, a2cConfig)
+                    params = `A2C (gamma: ${gamma})`
+                }
+
+                let block = MakeEnvironmentBlock(mainBlock, params)
+                visualizers.push(new ReinforcementLearningVisualizer(algorithm, block.environmentCanvas, block.environmentInfoBox, block.rewardCanvas, runBtn, stepBtn, stepEpisodeBtn, resetBtn, drawEnvironmentBox))
+            }
+        }
     </script>
 </body>
 </html>
