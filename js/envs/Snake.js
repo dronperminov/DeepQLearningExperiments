@@ -216,23 +216,24 @@ Snake.prototype.Reset = function() {
 
 Snake.prototype.GetReward = function(move) {
     if (move == SNAKE_WALL)
-        return -100
+        return -1
 
     if (move == SNAKE_EAT_SELF)
-        return -200
+        return -2
 
     if (move == SNAKE_NO_EAT)
-        return -400
+        return -4
 
     if (move == SNAKE_EAT_FOOD)
-        return 30
+        return this.snake.length
 
-    let prevDx = this.food.x - (this.snake[0].x - this.direction.dx)
-    let prevDy = this.food.y - (this.snake[0].y - this.direction.dy)
+    let head = this.snake[0]
+    let prevDx = this.food.x - (head.x - this.direction.dx)
+    let prevDy = this.food.y - (head.y - this.direction.dy)
     let prevDst = Math.abs(prevDx) + Math.abs(prevDy)
 
-    let currDx = this.food.x - this.snake[0].x
-    let currDy = this.food.y - this.snake[0].y
+    let currDx = this.food.x - head.x
+    let currDy = this.food.y - head.y
     let currDst = Math.abs(currDx) + Math.abs(currDy)
 
     if (currDst < prevDst)
