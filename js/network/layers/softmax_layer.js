@@ -1,5 +1,6 @@
 function SoftmaxLayer(size) {
     this.size = size
+    this.outputs = size
 }
 
 SoftmaxLayer.prototype.SetBatchSize = function(batchSize) {

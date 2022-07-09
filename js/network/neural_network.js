@@ -8,15 +8,24 @@ NeuralNetwork.prototype.AddLayer = function(description) {
     let layer = null
 
     if (description.type == 'fc') {
-        layer = new FullyConnectedLayer(this.outputs, description['size'], description['activation'])
-        this.outputs = description['size']
+        layer = new FullyConnectedLayer(this.outputs, description.size, description.activation)
+    }
+    else if (description.type == 'conv') {
+        layer = new ConvLayer(this.outputs, description.fc, description.fs, description.padding, description.stride)
+    }
+    else if (description.type == 'maxpool') {
+        layer = new MaxPoolingLayer(this.outputs, description.scale)
     }
     else if (description.type == 'softmax') {
         layer = new SoftmaxLayer(this.outputs)
     }
+    else if (description.type == 'flatten') {
+        layer = new FlattenLayer(this.outputs)
+    }
     else 
         throw new Error(`Unknown layer type "${description.type}"`)
 
+    this.outputs = layer.outputs
     this.layers.push(layer)
 }
 
