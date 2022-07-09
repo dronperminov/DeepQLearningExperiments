@@ -9,7 +9,12 @@ const SNAKE_EAT_FOOD = 'eat food'
 const SNAKE_NO_EAT = 'no eat'
 const SNAKE_DEFAULT = 'default'
 
-function Snake(fieldWidth = 14, fieldHeight = 9) {
+const SNAKE_HEAD_CELL = 0
+const SNAKE_CELL = 1
+const FOOD_CELL = 2
+
+function Snake(useConv = false, fieldWidth = 14, fieldHeight = 9) {
+    this.useConv = useConv
     this.fieldWidth = fieldWidth
     this.fieldHeight = fieldHeight
 
@@ -21,6 +26,10 @@ function Snake(fieldWidth = 14, fieldHeight = 9) {
     this.observationSpace = new UniformSpace(-1, 1, 43)
 
     this.ResetInfo()
+}
+
+Snake.prototype.GetObservationShape = function() {
+    return this.useConv ? [this.fieldHeight + 1, this.fieldWidth + 1, 3] : this.observationSpace.GetShape()
 }
 
 Snake.prototype.InitSnake = function() {
@@ -123,6 +132,18 @@ Snake.prototype.DistanceToCollision = function(x0, y0, dx, dy, fromHead = false)
     return [dx * i / this.fieldWidth, dy * i / this.fieldHeight]
 }
 
+Snake.prototype.StateToTensor = function() {
+    let stateTensor = InitTensorMemory([this.fieldHeight + 1, this.fieldWidth + 1, 3])
+
+    stateTensor[this.food.y][this.food.x][FOOD_CELL] = 1
+    stateTensor[this.snake[0].y][this.snake[0].x][SNAKE_HEAD_CELL] = 1
+
+    for (let i = 0; i < this.snake.length; i++)
+        stateTensor[this.snake[i].y][this.snake[i].x][SNAKE_CELL] = 1
+
+    return stateTensor
+}
+
 Snake.prototype.StateToVector = function() {
     let head = this.snake[0]
     let pointL = { x: head.x - 1, y: head.y }
@@ -211,7 +232,7 @@ Snake.prototype.Reset = function() {
 
     this.stepsWithoutFood = 0
 
-    return this.StateToVector()
+    return this.useConv ? this.StateToTensor() : this.StateToVector()
 }
 
 Snake.prototype.GetReward = function(move) {
@@ -265,7 +286,7 @@ Snake.prototype.Step = function(action) {
     let done = move == SNAKE_WALL || move == SNAKE_EAT_SELF || move == SNAKE_NO_EAT
 
     return {
-        state: this.StateToVector(),
+        state: this.useConv ? this.StateToTensor() : this.StateToVector(),
         reward: this.GetReward(move),
         done: done
     }

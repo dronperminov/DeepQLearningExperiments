@@ -8,7 +8,7 @@ function AdvancedActorCritic(environment, config) {
 }
 
 AdvancedActorCritic.prototype.InitActor = function(architecture) {
-    let inputs = this.environment.observationSpace.GetShape()
+    let inputs = this.environment.GetObservationShape()
     let outputs = this.environment.actionSpace.GetShape()
     let actor = new NeuralNetwork(inputs)
 
@@ -22,7 +22,7 @@ AdvancedActorCritic.prototype.InitActor = function(architecture) {
 }
 
 AdvancedActorCritic.prototype.InitCritic = function(architecture) {
-    let inputs = this.environment.observationSpace.GetShape()
+    let inputs = this.environment.GetObservationShape()
     let critic = new NeuralNetwork(inputs)
 
     for (let layer of architecture)

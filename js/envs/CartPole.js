@@ -21,6 +21,10 @@ function CartPole() {
     this.ResetInfo()
 }
 
+CartPole.prototype.GetObservationShape = function() {
+    return this.observationSpace.GetShape()
+}
+
 CartPole.prototype.StateToVector = function() {
     return [this.state.x, this.state.xDot, this.state.theta, this.state.thetaDot]
 }

@@ -23,7 +23,7 @@ function DeepQNetwork(environment, config) {
 }
 
 DeepQNetwork.prototype.InitAgent = function(architecture) {
-    let inputs = this.environment.observationSpace.GetShape()
+    let inputs = this.environment.GetObservationShape()
     let outputs = this.environment.actionSpace.GetShape()
     let agent = new NeuralNetwork(inputs)
 
